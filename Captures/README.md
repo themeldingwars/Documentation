@@ -1,0 +1,17 @@
+# Network Captures
+
+Collection of HTTP and UDP network traffic captures while running the Firefall client.
+
+**Note:** Captures may potentially contain some personal data (IP, MAC, username, email, encrypted passwords, ...), please respect people's privacy.
+
+## List of Captures
+
+| File                             | Client  | Type | Date       | Author    | Tool      |
+|----------------------------------|---------|------|------------|-----------|-----------|
+| 2015-05-02 - 1869 - Web APIs.saz | 1869    | HTTP | 2015-05-02 | DarkCisum | Fiddler   |
+| 2016-11-15 - Gameplay.pcapng.gz  | Unknown | UDP  | 2016-11-15 | DarkCisum | Wireshark |
+
+## Tools
+
+- [Wireshark](https://www.wireshark.org/)
+- [Fiddler](https://www.telerik.com/fiddler)
