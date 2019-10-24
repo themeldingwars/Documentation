@@ -1,0 +1,607 @@
+openapi: 3.0.1
+info:
+  title: Firefall Web API
+  description: All the web based Firefall API endpoints.
+  contact:
+    name: The Melding Wars
+    email: contact@themeldingwars.com
+  version: "1.0"
+servers:
+- url: https://operator.firefall.com/
+- url: https://in-game.firefall.com/
+- url: https://clientapi.firefall.com/
+- url: https://firefall.com/
+paths:
+  /api/v1/products/Firefall_Beta:
+    get:
+      tags:
+        - operator
+      summary: Returns build information supported/running on the server
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+  /check:
+    get:
+      tags:
+        - operator
+      summary: Returns the hostnames for various Firefall services given a specific environment and build
+      parameters:
+        - in: query
+          name: environment
+          schema:
+            type: string
+          required: true
+          description: Firefall environment for which to retrieve the hostnames for
+          examples:
+            betas:
+              summary: Example value for the beta environment
+              value: 'betas'
+        - in: query
+          name: build
+          schema:
+            type: integer
+          required: true
+          description: Firefall build number for which to retrieve the hostnames for
+          examples:
+            build:
+              summary: Example value of one of the latest builds
+              value: 1973
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Hostnames'
+  /login_alerts:
+    get:
+      tags:
+        - in-game
+      summary: Returns HTML which will be displayed at the login screen, used for general service announcements
+      responses:
+        200:
+          description: Success
+          content:
+            text/html:
+              schema:
+                type: string
+  /api/v1/oracle/ticket:
+    post:
+      tags:
+        - clientapi
+      requestBody:
+        description: Test
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OracleTicketRequest'
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OracleTicketResponse'
+  /api/v1/server/list:
+    post:
+      tags:
+        - clientapi
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ZoneList'
+  /api/v1/social/friend_list.json:
+    get:
+      tags:
+        - clientapi
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Friend'
+  /api/v1/social/static_data.json:
+    get:
+      tags:
+        - clientapi
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaticData'
+  /api/v2/accounts/login:
+    post:
+      tags:
+        - clientapi
+      summary: Checks whether a player can login
+      parameters:
+        - in: header
+          name: X-Red5-Signature
+          schema:
+            $ref: '#/components/schemas/Signature'
+          required: true
+          description: Red5 Security Signature Header
+        - in: header
+          name: X-Red5-Signature2
+          schema:
+            $ref: '#/components/schemas/Signature2'
+          required: true
+          description: Red5 Security Signature Header 2
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginCheck'
+  /api/v2/characters/list:
+    get:
+      tags:
+        - clientapi
+      summary: Returns the players list of available characters
+      parameters:
+        - in: header
+          name: X-Red5-Signature
+          schema:
+            $ref: '#/components/schemas/Signature'
+          required: true
+          description: Red5 Security Signature Header
+        - in: header
+          name: X-Red5-Signature2
+          schema:
+            $ref: '#/components/schemas/Signature2'
+          required: true
+          description: Red5 Security Signature Header 2
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CharacterList'
+  /launcher:
+    get:
+      tags:
+        - launcher
+      summary: Returns urls from where the launcher should retrieve its information
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Launcher'
+components:
+  schemas:
+    Launcher:
+      type: object
+      properties:
+        promotions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Promotion'
+        patch_notes_url:
+          type: string
+          format: uri
+        community_url:
+          type: string
+          format: uri
+        player_guides_url:
+          type: string
+          format: uri
+    Promotion:
+      type: object
+      properties:
+        image_url:
+          type: string
+          format: uri
+        link_url:
+          type: string
+          format: uri
+        title:
+          type: string
+        body:
+          type: string
+    StaticData:
+      type: object
+      properties:
+        zones:
+          type: array
+          items:
+            $ref: '#/components/schemas/Zone'
+    Zone:
+      type: object
+      properties:
+        zone_id:
+          type: integer
+        title:
+          type: string
+    Friend:
+      type: object
+      properties:
+        online:
+          type: boolean
+        last_seen_at:
+          type: string
+          format: date-time
+        last_zone_id:
+          type: integer
+        status:
+          type: string
+        name:
+          type: string
+    ZoneList:
+      type: object
+      properties:
+        zone_list:
+          type: array
+          items:
+            type: string
+    OracleTicketRequest:
+      type: object
+      properties:
+        ver:
+          type: integer
+          description: Oracle Ticket version
+        build:
+          type: string
+          description: Firefall build number
+    OracleTicketResponse:
+      type: object
+      properties:
+        matrix_url:
+          type: string
+        ticket:
+          type: string
+        datacenter:
+          type: string
+        operator_override:
+          type: object
+          properties:
+            ingame_host:
+              type: string
+              format: uri
+            clientapi_host:
+              type: string
+              format: uri
+        session_id:
+          type: string
+        hostname:
+          type: string
+    Product:
+      type: object
+      properties:
+        build:
+          type: string
+          description: Version of Firefall build supported by the server
+        environment:
+          type: string
+          description: Production envrionment supported by the server
+        region:
+          type: string
+          description: Region supported by the server
+        patch_level:
+          type: integer
+          description: Patch level version by the server
+      example:
+        build: beta-1973
+        environment: production
+        region: NA
+        patch_level: 0
+    Hostnames:
+      type: object
+      properties:
+        rhsigscan_host:
+          type: string
+          format: uri
+        frontend_host:
+          type: string
+          format: uri
+        store_host:
+          type: string
+          format: uri
+        chat_server:
+          type: string
+          format: hostname
+        replay_host:
+          type: string
+          format: uri
+        web_host:
+          type: string
+          format: uri
+        market_host:
+          type: string
+          format: uri
+        ingame_host:
+          type: string
+          format: uri
+        clientapi_host:
+          type: string
+          format: uri
+        web_asset_host:
+          type: string
+          format: uri
+        web_accounts_host:
+          type: string
+          format: uri
+      example:
+        frontend_host: "http://beta.firefallthegame.com"
+        store_host: "https://store.firefallthegame.com"
+        chat_server: "chat.firefallthegame.com"
+        replay_host: "http://firefall-replays-production-us.s3.amazonaws.com/beta-1869"
+        web_host: ""
+        market_host: "https://market.firefallthegame.com"
+        ingame_host: "https://ingame-v01-ew1.firefallthegame.com"
+        clientapi_host: "https://clientapi-v01-ew1.firefallthegame.com"
+        web_asset_host: "http://d2ja7bjtwj8eb0.cloudfront.net"
+        web_accounts_host: "https://accounts.firefallthegame.com"
+        rhsigscan_host: "http://stage5-redhanded.s3.amazonaws.com"
+    LoginCheck:
+      type: object
+      properties:
+        account_id:
+          type: integer
+        can_login:
+          type: boolean
+        is_dev:
+          type: boolean
+        steam_auth_prompt:
+          type: boolean
+        skip_precursor:
+          type: boolean
+        cais_status:
+          $ref: '#/components/schemas/CaisStatus'
+        character_limit:
+          type: integer
+        is_vip:
+          type: boolean
+        vip_expiration:
+          type: integer
+        created_at:
+          type: integer
+      example:
+        account_id: 26294422
+        can_login: true
+        is_dev: false
+        steam_auth_prompt: false
+        skip_precursor: false
+        cais_status:
+          state: disabled
+          duration: 0
+          expires_at: 0
+        character_limit: 2
+        is_vip: false
+        vip_expiration: 0
+        created_at: 1358612495
+    CaisStatus:
+      type: object
+      properties:
+        state:
+          type: string
+        duration:
+          type: integer
+        expires_at:
+          type: integer
+    Signature:
+      type: string
+      description: "Red5 Security Signature Header"
+    Signature2:
+      type: string
+      description: "Red5 Security Signature Header 2"
+    CharacterList:
+      type: object
+      properties:
+        characters:
+          type: array
+          items:
+            $ref: '#/components/schemas/Character'
+        is_dev:
+          type: boolean
+        rb_balance:
+          type: integer
+        name_change_cost:
+          type: integer
+      example:
+        characters:
+          -
+        race: human
+        is_dev: false
+        rb_balance: 386
+        name_change_cost: 100
+    Character:
+      type: object
+      properties:
+        character_guid:
+          type: string
+        name:
+          type: string
+        unique_name:
+          type: string
+        race:
+          type: string
+        gender:
+          type: integer
+        current_gender:
+          type: string
+        loadout_id:
+          type: integer
+          nullable: true
+        head_mainId:
+          type: integer
+        head_accAId:
+          type: integer
+        head_accBId:
+          type: integer
+        voice_setId:
+          type: integer
+        is_active:
+          type: boolean
+        is_dev:
+          type: boolean
+        xdata:
+          type: string
+          nullable: true
+        deleted_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        time_played_secs:
+          type: integer
+        title_id:
+          type: integer
+        needs_name_change:
+          type: boolean
+        max_frame_level:
+          type: integer
+        frame_sdb_id:
+          type: integer
+        current_level:
+          type: integer
+        visuals:
+          $ref: '#/components/schemas/Visuals'
+      example:
+        character_guid: 9168405683928066011
+        name: DarkCisum
+        unique_name: DARKCISUM
+        is_dev: false
+        is_active: true
+        created_at: '2013-01-27T23:02:19+00:00'
+        title_id: 135
+        time_played_secs: 2914607
+        needs_name_change: false
+        max_frame_level: 40
+        frame_sdb_id: 76337
+        current_level: 23
+        gender: 0
+        current_gender: male
+        visuals:
+          id: 0
+          race: 0
+          gender: 0
+          skin_color:
+            id: 77181
+            value:
+              color: 413270016
+          voice_set:
+            id: 1000
+          head:
+            id: 10002
+          eye_color:
+            id: 77183
+            value:
+              color: 1780760800
+          lip_color:
+            id: 1
+            value:
+              color: 4294903873
+          hair_color:
+            id: 77194
+            value:
+              color: 839712801
+          facial_hair_color:
+            id: 77194
+            value:
+              color: 839712801
+          head_accessories:
+            - id: 10089
+              value:
+                color: 839712801
+            - id: 10106
+              value:
+                color: 839712801
+          ornaments:
+            - id: 10270
+            - id: 10224
+            - id: 10061
+          eyes:
+            id: 10001
+          hair:
+            id: 10089
+            color:
+              id: 77194
+              value: 839712801
+          facial_hair:
+            id: 10106
+            color:
+              id: 77194
+              value: 839712801
+          glider:
+            id: 0
+          vehicle:
+            id: 0
+          decals:
+            - sdb_id: 10000
+              color: 4294967295
+              transform:
+                - 0.05246
+                - 0.019623
+                - 0
+                - 0.007484
+                - -0.02002
+                - -0.051758
+                - 0.018127
+                - -0.048492
+                - 0.021362
+                - 0.108154
+                - -0.105469
+                - 1.495117
+          warpaint_id: 77307
+          warpaint:
+            - 2356215808
+            - 276957281
+            - 2415919104
+            - 2097152
+            - 1384782051
+            - 4236511329
+            - 4236511329
+          decalgradients: []
+          warpaint_patterns:
+            - sdb_id: 10022
+              transform:
+                - 7727
+                - 1024
+                - 1400
+                - 0
+              usage: 0
+          visual_overrides: []
+        gear:
+          - slot_type_id: 1
+            sdb_id: 87344
+            item_guid: 744156780720037100
+          - slot_type_id: 2
+            sdb_id: 87830
+            item_guid: 744159850480592100
+          - slot_type_id: 7
+            sdb_id: 89802
+            item_guid: 744155613575695100
+          - slot_type_id: 116
+            sdb_id: 93951
+            item_guid: 743917192479176400
+          - slot_type_id: 8
+            sdb_id: 89861
+            item_guid: 744155613575695600
+          - slot_type_id: 9
+            sdb_id: 89916
+            item_guid: 744155613575695900
+          - slot_type_id: 6
+            sdb_id: 89966
+            item_guid: 744155613575696100
