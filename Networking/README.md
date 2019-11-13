@@ -45,3 +45,7 @@ Partially documented Web APIs as OpenAPI specification:
 ## Game Server
 
 See [Game Server Protocol Overview](https://github.com/themeldingwars/Documentation/wiki/Game-Server-Protocol-Overview) on the wiki.
+
+![Game Server Protocol](./Diagrams/Firefall Network Proto.png)
+
+![Matrix State Machine](./Diagrams/Matrix State Machine.png)
