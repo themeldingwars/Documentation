@@ -1,29 +1,34 @@
-//--------------------------------------
-// 010 Editor Template
-// File: worldMap
-// Author: freakbyte
-//--------------------------------------
+//------------------------------------------------
+//--- 010 Editor v10.0.2 Binary Template
+//
+//      File: .worldMap
+//   Authors: FallenAvatar
+//   Version: 1.0
+//  Category: Game
+// File Mask: *.worldMap
+//  ID Bytes: GTNO
+//   History: 
+//------------------------------------------------
 
-struct FILE
-{   
-    struct HEADER
-    {
-        char GTNO[4];
-        uint version[3];
-        uint last; //filename
-        uint second; //filename
-        float location[9];
-        
-        uint _25601;
-        byte padding;
-      
-        uint reminder;
-        
-        uint payloadExtractedSize;
-        uint payloadCompressedSize;
-        ushort zlibDefaultCompression; // 78 9C
+struct Vec3f {
+    float X;
+    float Y;
+    float Z;
+};
 
-        byte deflated[payloadCompressedSize-2];
+struct HEADER {
+    char magic[4]<hidden=true>;
+    int32 version[3];
+    uint32 entryId;
+    uint32 zoomLvl;
+    Vec3f corners[3]; // maybe bounds? not sure
+    uint32 LodSubsectionId;
+    byte padding<hidden=true>;
+    uint32 reminder;
+    uint32 payloadExtractedSize;
+    uint32 payloadCompressedSize;
+    ushort zlibDefaultCompression;
+} hdr<name="Header">;
 
-    } header;
-} file;
+
+byte deflatedPayload[hdr.payloadCompressedSize-2];

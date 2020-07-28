@@ -4,33 +4,60 @@
 // Author: freakbyte
 //--------------------------------------
 
-struct FILE
-{
+local uint64 NODE_TAG_MAGIC = 1363845299501208301;
 
-    struct NODE;
-    struct NODE
-    {
-        uint unk[7];
-        uint length;
+local uint32 DATA1_MAGIC = 1096040772;
+local uint32 DATA2_MAGIC = 844382532;
 
-        uint check<hidden=false>;
-        FSeek(FTell()-4);
+local uint64 check64 = 0;
+local uint32 check32 = 0;
 
-        if(check == 3982168813 || check == 1413563424 || check == 3977403373)
-        {          
-            local uint64 end = FTell() + length;
-            while(FTell() < end)
-            {
-                //byte d[length];
-                struct NODE child;
-            }
+struct NODE;
+struct NODE {
+    uint64 magicTag<hidden=true>;
+    uint32 nodeType;
+    uint32 len;
+
+    local uint64 end = FTell() + len;
+    check64 = ReadUInt64();
+    if( check64 != NODE_TAG_MAGIC ) {
+        do {
+            byte data<name="data">;
+            check64 = ReadUInt64();
+        } while( FTell() < end && check64 != NODE_TAG_MAGIC );
+    }
+    if( check64 == NODE_TAG_MAGIC ) {
+        
+        while( FTell() < end ) {
+            NODE child;
         }
-        else
-        {
-            byte data[length];
-        }
-    };
+    } else if( end - FTell() > 0 ) {
+        byte data2[end - FTell()];
+    }
+};
+struct DATA1 {
+    char magic[4];
+    check32 = ReadUInt();
+    while( check32 != DATA2_MAGIC ) {
+        byte data;
+        check32 = ReadUInt();
+    }
+};
+struct DATA {
+    char magic[4];
+    check32 = ReadUInt();
+    while( !FEof() && ((FTell() + 4 > FileSize()) || (check32 != DATA1_MAGIC && check32 != DATA2_MAGIC)) ) {
+        byte data;
+        if( FTell() + 4 <= FileSize() )
+            check32 = ReadUInt();
+    }
+};
 
-    NODE hiherarchy;
+NODE root;
 
-} file;
+check32 = ReadUInt();
+while( !FEof() && (check32 == DATA1_MAGIC || check32 == DATA2_MAGIC) ) {
+    DATA data;
+    if( FTell() + 4 <= FileSize() )
+        check32 = ReadUInt();
+}

@@ -1,47 +1,154 @@
-//--------------------------------------
-// 010 Editor Template
-// File: .zone
-// Author: freakbyte
-//--------------------------------------
+//------------------------------------------------
+//--- 010 Editor v10.0.2 Binary Template
+//
+//      File: .zone
+//   Authors: FallenAvatar
+//   Version: 1.0
+//  Category: Game
+// File Mask: *.zone
+//  ID Bytes: ZONE
+//   History: 
+//------------------------------------------------
 
-struct FILE
+struct HEADER {
+    char magic[4]<hidden=true>;
+    int32 version;
+    uint64 microTS;
+    uint32 nameLen<hidden=true>;
+    char name[nameLen];
+} hdr<name="Header">;
+
+local uint64 NODE_MAGIC_HEADER = 0x12ED5A12ED5B12ED;
+
+struct DataUnkBytes(int dataSize) {
+    byte data[dataSize]<name="Bytes">;
+};
+
+struct DataU001 {
+    float data[6];
+};
+
+struct DataU002 {
+    uint32 data;
+};
+
+struct DataU004 {
+    float data[6];
+};
+
+struct DataU007 {
+    float data[7];
+    uint16 data2;
+    float data3;
+};
+
+struct DataU024 {
+    int32 unk;
+    int32 xMin;
+    int32 xMax;
+    int32 yMin;
+    int32 yMax;
+};
+
+struct Vec31 {
+    int32 X<name="X">;
+    int32 Y<name="Y">;
+    int32 Z<name="Z">;
+};
+
+struct Vec4f {
+    float X<name="X">;
+    float Y<name="Y">;
+    float Z<name="Z">;
+    float W<name="W">;
+};
+
+struct Mat44f {
+    float row1[4];
+    float row2[4];
+    float row3[4];
+    float row4[4];
+};
+
+struct Doodad {
+    uint32 unk1;
+    Vec4f unk2[4];
+    uint32 unk3;
+    uint32 unk4;
+    int32 unk5;
+    int32 unk6;
+    int32 unk7;
+    int32 unk8;
+    float unk9[5];
+};
+
+struct NODE;
+struct NODE
 {
-    struct HEADER
-    {
-        char magic[4];
-        int version;
-        uint64 microsecondEpochTimestamp; // utc
-        int zoneNameLength;
-        string zoneName;
+    uint64 magic_hdr<hidden=true>;
+    enum <uint32> {
+        TYPE_ROOT_NODE = 196608,
+        TYPE_U001_NODE = 135168, // 0x00100200 Loc?? 6 floats
+        TYPE_U002_NODE = 131072, // 0x00000200 uint32?
+        TYPE_U003_NODE = 131328, // 0x00010200 has children
+        TYPE_U004_NODE = 10000, // 0x10270000 Bounds?? 6 floats
+        TYPE_U005_NODE = 327681, // 0x01000500 Entity Def? has children
+        TYPE_U006_NODE = 401, // 0x91010000 Scale? 22 floats/ints
+        TYPE_U007_NODE = 1300, // 0x14050000 8 floats + a short?
+        TYPE_U008_NODE = 1400, // 0x78050000 ??? alpha mask??
+        TYPE_U009_NODE = 34, // 0x22000000
+        TYPE_U010_NODE = 304, // 0x30010000 some kind of mat4x4?
+        TYPE_U011_NODE = 1000, // 0xE8030000 rotation?
+        TYPE_U012_NODE = 601, // 0x59020000
+        TYPE_U013_NODE = 203, // 0xCB000000 mat3x4?
+        TYPE_U014_NODE = 1200, // 0xB0040000
+        TYPE_U015_NODE = 700, // 0xBC020000
+        TYPE_U016_NODE = 900, // 0x84030000
+        TYPE_U017_NODE = 800, // 0x20030000
+        TYPE_U018_NODE = 501, // 0xF5010000
+        TYPE_U019_NODE = 131584, // 0x00020200 has children, pvp arena info?
+        TYPE_U020_NODE = 5, // 0x05000000 command? (set perimiter)? uint32 len; byte data[len]; repeat, with a bunch of 0xff in the middle??? ends with a bunch of 0x00
+        TYPE_U021_NODE = 133120, // 0x00080200 waypoint/path data
+        TYPE_U022_NODE = 132864, // 0x00070200 large data blob
+        TYPE_U023_NODE = 132096, // 0x00040200 GTChunk info or refrence? has 1 65536 and lots of 65793 nodes
+        TYPE_U024_NODE = 65536, // 0x00000100 xy coords/bounds? 5 int32
+        TYPE_Vec3i_NODE = 65793, // 0x01010100 vec3? 3 int32
+        TYPE_U026_NODE = 131840, // 0x00030200 water data?
+        TYPE_U027_NODE = 133376, // 0x00090200 world chunk?
+        TYPE_U028_NODE = 136448, // 0x00150200 camera sequence data
+        TYPE_U029_NODE = 136704, // 0x00160200 zone transfer bounds?
+        TYPE_U030_NODE = 136960, // 0x00170200
+        TYPE_U031_NODE = 135680, // 0x00120200 prop encounter name registry
+        TYPE_U032_NODE = 136192, // 0x00140200 no-farclip doodads?
+        TYPE_Doodad_NODE = 327680, // 0x00000500 doodad
+    } typeID<name="NodeType">;
+    uint32 dataLen<name="DataLength">;
 
-    } header;
+    uint64 check<hidden=true>;
+    FSkip( -8 ); // "skip" backwards
 
-    struct NODE;
-    struct NODE
-    {
-        uint x;
-        uint y;
-        uint z;
-        uint length;
-
-        uint check<hidden=true>;
-        FSeek(FTell()-4);
-
-        if(check == 3982168813)
-        {          
-            local uint64 end = FTell() + length;
-            while(FTell() < end)
-            {
-                //byte d[length];
-                struct NODE child;
-            }
+    if( NODE_MAGIC_HEADER == check ) {  
+        local uint64 end = FTell() + dataLen;
+        while( FTell() < end ) {
+            NODE children<name="Child">;
         }
-        else
-        {
-            byte data[length];
-        }
-    };
+    } else if( typeID == TYPE_U001_NODE ) {
+        DataU001 data;
+    } else if( typeID == TYPE_U002_NODE ) {
+        DataU002 data;
+    } else if( typeID == TYPE_U004_NODE ) {
+        DataU004 data;
+    } else if( typeID == TYPE_U007_NODE ) {
+        DataU007 data;
+    } else if( typeID == TYPE_U024_NODE ) {
+        DataU024 data;
+    } else if( typeID == TYPE_Vec3i_NODE ) {
+        Vec31 data<name="Vec3i">;
+    } else if( typeID == TYPE_Doodad_NODE ) {
+        Doodad data<name="Doodad">;
+    } else {
+        DataUnkBytes data(dataLen)<name="UnknownData">;
+    }
+};
 
-    NODE hiherarchy;
-
-} file;
+NODE root<name="Root">;

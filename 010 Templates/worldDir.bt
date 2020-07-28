@@ -1,45 +1,44 @@
-//--------------------------------------
-// 010 Editor Template
-// File: .worldDir
-// Author: freakbyte
-//--------------------------------------
+//------------------------------------------------
+//--- 010 Editor v10.0.2 Binary Template
+//
+//      File: .worldDir
+//   Authors: FallenAvatar
+//   Version: 1.0
+//  Category: Game
+// File Mask: *.worldDir
+//  ID Bytes: 
+//   History: 
+//------------------------------------------------
 
-struct HEADER
-{
-    uint padding;
-    uint _88;
-    char WMAP[4];
-    uint _3;
-    uint numTiles;
-    byte padding2;
-    uint locLength;
-    char location[locLength];
-    uint fileSize;
+LittleEndian();
+
+struct Vec3f {
+    float X;
+    float Y;
+    float Z;
 };
 
-struct TILE
-{
-    uint _100;
-    uint _89;
-    uint fileNameLength; // always 29 it seems
-    char fileName[fileNameLength];
-    uint _0;
-    uint chunkSize;
-    uint a;
-    uint b;
-    ushort c;
-    ushort d;
-    float bounds[9];
-};
+struct HEADER {
+    byte unkSame1[8];
+    char magic[4]<hidden=true>;
+    int version;
+    int numTiles;
+    byte unkSameB;
+    int pathLen;
+    char path[pathLen];
+    int fileSize;
+} hdr <bgcolor=cBlue>;
 
-string PacketInfo(TILE &tile)
-{
+struct TILE {
+    uint32 unk1;
+    uint32 unk2;
+    int nameLen<hidden=true>;
+    char filename[nameLen];
+    byte namePadding[33 - nameLen]<hidden=true>;
+    uint32 fileSize;
 
-    string ret;
-    SPrintf(ret, "Tile : %d %d %d %d", tile.a, tile.b, tile.c, tile.d );
-    return ret;
-}
-
-
-HEADER header;
-TILE tiles[header.numTiles] <name=PacketInfo>;
+    uint32 cubemapId;
+    uint32 zoomLvl;
+    uint32 entryId;
+    Vec3f corners[3];
+} Tiles[hdr.numTiles];
