@@ -1,0 +1,180 @@
+//--------------------------------------
+// 010 Editor Template
+// File: bMesh v32
+// Author: freakbyte, Arkii
+// Note: VertexLodPosition dosnt seem to be used
+// + BaseVariantDiff links to another bMesh, even though it says .oMesh
+// + IS IT FINALLY DONE? D:
+//--------------------------------------
+
+struct HEADER
+{
+    char    magic[5];
+    ushort  version;
+    byte    padding;
+    float   minBounds[3];
+    float   maxBounds[3];
+    byte    tangentType; // 0=melody, 1=turtle
+    byte    tangentSplit; // 0=off, 1=on
+};
+
+struct M4X4
+{
+    float x, y, z, w;
+    float x, y, z, w;
+    float x, y, z, w;
+    float x, y, z, w;
+};
+
+struct VERTEX
+{
+    float x, y, z;
+};      
+
+struct UV
+{
+    float u, v;
+};
+
+struct FACE
+{
+    uint v1, v2, v3; // need to look up the vertices trough the face index
+};
+
+struct BONE
+{
+    char name[64];
+    int parent;
+    M4X4 bindMatrix;
+    M4X4 inverseBindMatrix; 
+    byte hasSkinnedVertices; // 1 if any vertex is skinned to this bone and 0 if not
+    byte padding[3];
+};
+
+struct LINK
+{
+    uint weightIndex;
+    uint vertexIndex;         
+};
+
+struct BONEWEIGHT
+{
+    byte weight;
+    byte index;
+};
+
+struct HARDPOINT
+{
+    char name[64];
+    int parent;
+
+    M4X4 bindMatrix;                // absolute transform for the hard point
+    M4X4 inverseBindMatrix;         // used for skinning
+    M4X4 hpToBoneMatrix;            // goes from hard point space to bone space if there's a parent bone (= bindMatrix * bone->inverseBindMatrix
+    M4X4 normalizedBindMatrix;
+    M4X4 normalizedHpToBoneMatrix;
+};
+
+struct VERTEXCOLOR
+{
+    ubyte r;
+    ubyte g;
+    ubyte b;
+    ubyte a;    
+};
+
+struct MATERIALS
+{
+    uint numMats ;
+    struct MATERIAL
+    {
+        uint nameLen;
+        char Name[nameLen];
+        uint faceStart;
+        uint faceCount;
+        uint vertexMin;
+        uint vertexMax;
+    } material[numMats] <optimize=false>;
+};
+
+
+struct VERTEXLODPOSITION
+{
+	//todo
+};
+
+
+struct BASEDIFF
+{
+    ushort faceIdx;
+    hfloat baryWeights[2];
+};
+
+struct CONFORMWEIGHT
+{
+    ushort index;
+    hfloat weight;
+    ushort index;
+    hfloat weight; 
+    ushort index;
+    hfloat weight; 
+};
+
+struct FILE
+{
+    HEADER header;
+
+    uint numVertices;
+    VERTEX vertices[numVertices];
+
+    uint numVertexLodPositions;
+    VERTEXLODPOSITION vertexLodPositions[numVertexLodPositions];
+
+    uint numNormals;
+    uint normals[numNormals];
+	
+    uint numTexcoord0;
+    UV texcoord0[numTexcoord0];
+
+    uint numTexcoord1;
+    UV texcoord1[numTexcoord1];
+
+    uint numTangents;
+    uint tangents[numTangents];
+
+    uint  numVertexColors;
+    VERTEXCOLOR vertexcolors[numVertexColors];
+
+    uint faceIndicesLen;
+    uint faceIndices[faceIndicesLen];
+
+    uint numFaces;        
+    FACE faces[numFaces];
+
+    uint numBones;
+    BONE bones[numBones];
+
+    uint numLinks;
+    LINK links[numLinks];
+
+    uint numBoneWeights;
+    BONEWEIGHT boneWeights[numBoneWeights];
+
+    uint numHardpoints;
+    HARDPOINT hardpoints[numHardpoints];
+	
+    uint refMeshFileNameLen;
+    char refMeshFileName[refMeshFileNameLen];
+    
+    uint64 refMeshFileTime;
+    byte meshType; // 0=none, 1=base variant, 2=conform mesh
+
+    uint numBaseDiffs; 
+    BASEDIFF baseDiffs[numBaseDiffs];
+
+    uint numConformWeights; 
+    CONFORMWEIGHT conformWeights[numConformWeights];
+
+    MATERIALS materials;
+
+} file;

@@ -1,0 +1,45 @@
+//--------------------------------------
+// 010 Editor Template
+// File: .worldDir
+// Author: freakbyte
+//--------------------------------------
+
+struct HEADER
+{
+    uint padding;
+    uint _88;
+    char WMAP[4];
+    uint _3;
+    uint numTiles;
+    byte padding2;
+    uint locLength;
+    char location[locLength];
+    uint fileSize;
+};
+
+struct TILE
+{
+    uint _100;
+    uint _89;
+    uint fileNameLength; // always 29 it seems
+    char fileName[fileNameLength];
+    uint _0;
+    uint chunkSize;
+    uint a;
+    uint b;
+    ushort c;
+    ushort d;
+    float bounds[9];
+};
+
+string PacketInfo(TILE &tile)
+{
+
+    string ret;
+    SPrintf(ret, "Tile : %d %d %d %d", tile.a, tile.b, tile.c, tile.d );
+    return ret;
+}
+
+
+HEADER header;
+TILE tiles[header.numTiles] <name=PacketInfo>;

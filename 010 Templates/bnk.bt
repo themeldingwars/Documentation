@@ -1,0 +1,315 @@
+//--------------------------------------
+// 010 Editor Template
+// File: .bnk
+// Author: freakbyte
+//--------------------------------------
+
+struct BKHD
+{
+    uint version;
+    uint id;
+    byte unknown[sectionLength-8];
+};
+
+struct DIDX
+{
+    struct ENTRY
+    {
+        uint id;
+        uint offset;
+        uint length;
+    } entry[sectionLength / 12];
+
+};
+
+struct DATA
+{
+    local int i;
+    for(i = 0; i < didx.entry.length; i++)
+    {
+        byte track[didx.entry[i].length];
+    }    
+};
+
+enum <ubyte> HIRC_EntryType
+{
+    Settings = 1,
+    Sound = 2,
+    EventAction = 3,
+    Event = 4,
+    RandomOrSequenceContainer = 5,
+    SwitchContainer = 6,
+    ActorMixer = 7,
+    AudioBus = 8,
+    BlendContainer = 9,
+    MusicSegment = 10,
+    MusicTrack = 11,
+    MusicSwitchContainer = 12,
+    MusicPlaylistContainer = 13,
+    Attenuation = 14,
+    DialogueEvent = 15,
+    MotionBus = 16,
+    MotionFx = 17,
+    Effect = 18,
+    Unknown = 19,
+    AuxiliaryBus = 20
+};
+
+enum <uint> HIRC_Sound_StorageType
+{
+    Embedded = 0,
+    Streamed = 1,
+    StreamedPrefetched = 2
+};
+
+enum <ubyte> HIRC_Sound_SoundType
+{
+    SFX = 0,
+    Voice = 1
+};
+
+struct HIRC_UNK
+{
+    uint length;
+    byte data[length];
+};
+
+struct HIRC_Settings
+{
+    uint length;
+    byte data[length];
+};
+struct HIRC_Sound
+{
+    uint EntryLength;
+    uint EntryId;
+        uint _unknown;
+        uint State;
+        uint IDAudio;
+        uint IDSource;
+        byte SoundType;
+    byte Data[EntryLength - 21];
+
+};
+struct HIRC_EventAction
+{
+    uint length;
+    byte data[length];
+};
+
+struct HIRC_Event
+{
+    uint length;
+    byte data[length];
+};
+struct HIRC_RandomOrSequenceContainer
+{
+    uint length;
+    byte data[length];
+};
+struct HIRC_SwitchContainer
+{
+    uint length;
+    byte data[length];
+};
+struct HIRC_ActorMixer
+{
+    uint length;
+    byte data[length];
+};
+struct HIRC_AudioBus
+{
+    uint length;
+    byte data[length];
+};
+struct HIRC_BlendContainer
+{
+    uint length;
+    byte data[length];
+};
+struct HIRC_MusicSegment
+{
+    uint length;
+    byte data[length];
+};
+struct HIRC_MusicTrack
+{
+    uint length;
+    byte data[length];
+};
+struct HIRC_MusicSwitchContainer
+{
+    uint length;
+    byte data[length];
+};
+struct HIRC_MusicPlaylistContainer
+{
+    uint length;
+    byte data[length];
+};
+struct HIRC_Attenuation
+{
+    uint length;
+    byte data[length];
+};
+struct HIRC_DialogueEvent
+{
+    uint length;
+    byte data[length];
+};
+struct HIRC_MotionBus
+{
+    uint length;
+    byte data[length];
+};
+struct HIRC_MotionFx
+{
+    uint length;
+    byte data[length];
+};
+struct HIRC_Effect
+{
+    uint length;
+    byte data[length];
+};
+struct HIRC_Unknown
+{
+    uint length;
+    byte data[length];
+};
+struct HIRC_AuxiliaryBus
+{
+    uint length;
+    byte data[length];
+};
+
+
+
+struct HIRC
+{
+    local uint i = 0;
+    uint count;
+
+    for( i = 0; i < count; i++ )
+    {
+        HIRC_EntryType type<hidden=true>; 
+        switch(type)
+        {
+            case Settings:
+                HIRC_Settings entry<name="Settings">;;
+                break;
+            case Sound:
+                HIRC_Sound entry<name="Sound">;
+                break;
+            case EventAction:
+                HIRC_EventAction entry<name="EventAction">;;
+                break;
+            case Event:
+                HIRC_Event entry<name="Event">;;
+                break;
+            case RandomOrSequenceContainer:
+                HIRC_RandomOrSequenceContainer entry<name="RandomOrSequenceContainer">;;
+                break;
+            case SwitchContainer:
+                HIRC_SwitchContainer entry<name="SwitchContainer">;;
+                break;
+            case ActorMixer:
+                HIRC_ActorMixer entry<name="ActorMixer">;;
+                break;
+            case AudioBus:
+                HIRC_AudioBus entry<name="AudioBus">;;
+                break;
+            case BlendContainer:
+                HIRC_BlendContainer entry<name="BlendContainer">;;
+                break;
+            case MusicSegment:
+                HIRC_MusicSegment entry<name="MusicSegment">;;
+                break;
+            case MusicTrack:
+                HIRC_MusicTrack entry<name="MusicTrack">;;
+                break;
+            case MusicSwitchContainer:
+                HIRC_MusicSwitchContainer entry<name="MusicSwitchContainer">;;
+                break;
+            case MusicPlaylistContainer:
+                HIRC_MusicPlaylistContainer entry<name="MusicPlaylistContainer">;;
+                break;
+            case Attenuation:
+                HIRC_Attenuation entry<name="Attenuation">;;
+                break;
+            case DialogueEvent:
+                HIRC_DialogueEvent entry<name="DialogueEvent">;;
+                break;
+            case MotionBus:
+                HIRC_MotionBus entry<name="MotionBus">;;
+                break;
+            case MotionFx:
+                HIRC_MotionFx entry<name="MotionFx">;;
+                break;
+            case Effect:
+                HIRC_Effect entry<name="Effect">;;
+                break;
+            case Unknown:
+                HIRC_Unknown entry<name="Unknown">;;
+                break;
+            case AuxiliaryBus:
+                HIRC_AuxiliaryBus entry<name="AuxiliaryBus">;
+                break;
+            default:         
+                HIRC_UNK entry<name="UNKNOWN">;;
+                break;
+        } 
+    }
+};
+
+struct STID_ENTRY
+{
+    uint id;
+    ubyte length;
+    char name[length];
+};
+
+struct STID
+{
+    uint one;
+    uint count;
+    STID_ENTRY entries[count]<optimize=false>;
+};
+
+struct UNK
+{
+    byte data[sectionLength];
+};
+
+
+local char magic[4];
+local uint sectionLength;
+
+while(!FEof())
+{   
+    magic = ReadString(FTell(), 4);
+    FSkip(4);
+    sectionLength = ReadUInt();
+    FSkip(4);
+    
+    switch(magic)
+    {
+        case "BKHD":
+            BKHD bkhd;
+            break;
+        case "DIDX":
+            DIDX didx;       
+        case "DATA":
+            DATA data;
+            break;
+        case "HIRC":
+            HIRC hirc;
+            break;
+        case "STID":
+            STID stid;
+            break;
+        default:         
+            UNK unk;
+            break;
+    }   
+}

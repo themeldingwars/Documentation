@@ -1,0 +1,125 @@
+//--------------------------------------
+// 010 Editor Template
+// File: worldMap deflate stream
+// Author: freakbyte
+//--------------------------------------
+
+struct FACE
+{
+    ushort v1;
+    ushort v2;
+    ushort v3;
+};
+
+string FaceInfo(FACE &face)
+{
+    string ret;
+    string seq;
+    SPrintf(ret, "%d, %d, %d", face.v1, face.v2, face.v3);
+    return ret;
+}
+
+
+
+struct b13 {byte b[13];};
+struct b24
+{
+    hfloat a;
+    hfloat b;
+    short c;
+    short d;
+    hfloat e;
+    hfloat f;
+    short g;
+    short h;
+    uint64 unk;
+};
+
+
+
+struct CHUNK_UNK
+{
+    byte data[Length];
+};
+
+struct TEXTURE
+{
+    byte data[Length];
+};
+
+struct CHUNK_21
+{
+    uint i;
+    b24 b[i];
+    uint unk[4];
+};
+struct CHUNK_31
+{
+    uint i;
+    uint x;
+    byte pad;
+    FACE faces[x/3] <name="Face", read=FaceInfo>;
+    FACE faces2[(i-x)/3] <name="Face", read=FaceInfo>;
+};
+
+struct CHUNK_41_SUB
+{
+    ushort offset;
+    ushort count; // count x 3 shorts
+};
+
+struct CHUNK_41
+{
+    uint i;
+    byte pad;
+    CHUNK_41_SUB sub[i/2];
+};
+
+struct CHUNK_50
+{
+    byte data[Length];
+};
+
+struct CHUNK_61
+{
+    uint i;
+    b13 b[i];
+    uint x;
+    short y[x];
+};
+
+
+
+
+while(!FEof())
+{
+    uint Id <hidden=true>;
+    uint Length <hidden=true>;
+    switch(Id)
+    {
+        case 10:
+            TEXTURE texture <name="Texture ">;
+            break;
+        case 11:
+            TEXTURE texture <name="Texture ">;
+            break;
+        case 21:
+            CHUNK_21 unk <name="Vertices? ">;;
+            break;
+        case 31:
+            CHUNK_31 unk <name="Faces? ">;;
+            break;
+        case 41:
+            CHUNK_41 unk;
+            break;
+        case 50:
+            CHUNK_50 unk;
+            break;
+        case 61:
+            CHUNK_61 unk;
+            break;
+        default:
+            CHUNK_UNK unk;
+            break;
+    }
+}

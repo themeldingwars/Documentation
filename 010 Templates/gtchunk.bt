@@ -1,0 +1,36 @@
+//--------------------------------------
+// 010 Editor Template
+// File: .gtchunk
+// Author: freakbyte
+//--------------------------------------
+
+struct FILE
+{
+
+    struct NODE;
+    struct NODE
+    {
+        uint unk[7];
+        uint length;
+
+        uint check<hidden=false>;
+        FSeek(FTell()-4);
+
+        if(check == 3982168813 || check == 1413563424 || check == 3977403373)
+        {          
+            local uint64 end = FTell() + length;
+            while(FTell() < end)
+            {
+                //byte d[length];
+                struct NODE child;
+            }
+        }
+        else
+        {
+            byte data[length];
+        }
+    };
+
+    NODE hiherarchy;
+
+} file;

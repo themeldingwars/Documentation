@@ -1,0 +1,47 @@
+//--------------------------------------
+// 010 Editor Template
+// File: .zone
+// Author: freakbyte
+//--------------------------------------
+
+struct FILE
+{
+    struct HEADER
+    {
+        char magic[4];
+        int version;
+        uint64 microsecondEpochTimestamp; // utc
+        int zoneNameLength;
+        string zoneName;
+
+    } header;
+
+    struct NODE;
+    struct NODE
+    {
+        uint x;
+        uint y;
+        uint z;
+        uint length;
+
+        uint check<hidden=true>;
+        FSeek(FTell()-4);
+
+        if(check == 3982168813)
+        {          
+            local uint64 end = FTell() + length;
+            while(FTell() < end)
+            {
+                //byte d[length];
+                struct NODE child;
+            }
+        }
+        else
+        {
+            byte data[length];
+        }
+    };
+
+    NODE hiherarchy;
+
+} file;

@@ -1,0 +1,484 @@
+//--------------------------------------
+// 010 Editor Template
+// File: .nsr, network stream replay
+// Author: DarkCisum, freakbyte
+// Note: The entire file is compressed using gzip
+//--------------------------------------
+
+struct GENERIC
+{
+    byte data[length-8]; 
+};
+
+struct Character_BaseController
+{
+    byte data[length-8];
+};
+
+struct Character_NPCController
+{
+    byte data[length-8];
+};
+
+struct Character_MissionAndMarkerController
+{
+    byte data[length-8];
+};
+
+struct Character_CombatController
+{
+    byte data[length-8];
+};
+
+struct Character_LocalEffectsController
+{
+    byte data[length-8];
+};
+
+struct Character_SpectatorController
+{
+    byte data[length-8];
+};
+
+struct Character_ObserverView
+{
+    byte data[length-8];
+};
+
+struct Character_EquipmentView
+{
+    byte data[length-8];
+};
+
+struct Character_AIObserverView
+{
+    byte data[length-8];
+};
+
+struct Character_CombatView
+{
+    byte data[length-8];
+};
+
+struct Character_MovementView
+{
+    byte data[length-8];
+};
+
+struct Character_TinyObjectView
+{
+    byte data[length-8];
+};
+
+struct Character_DynamicProjectileView
+{
+    byte data[length-8];
+};
+
+struct Melding_ObserverView
+{
+    byte data[length-8];
+};
+
+struct MeldingBubble_ObserverView
+{
+    byte data[length-8];
+};
+
+struct AreaVisualData_ObserverView
+{
+    byte data[length-8];
+};
+
+struct AreaVisualData_ParticleEffectsView
+{
+    byte data[length-8];
+};
+
+struct AreaVisualData_MapMarkerView
+{
+    byte data[length-8];
+};
+
+struct AreaVisualData_TinyObjectView
+{
+    byte data[length-8];
+};
+
+struct AreaVisualData_LootObjectView
+{
+    byte data[length-8];
+};
+
+struct AreaVisualData_ForceShieldView
+{
+    byte data[length-8];
+};
+
+struct Vehicle_BaseController
+{
+    byte data[length-8];
+};
+
+struct Vehicle_CombatController
+{
+    byte data[length-8];
+};
+
+struct Vehicle_ObserverView
+{
+    byte data[length-8];
+};
+
+struct Vehicle_CombatView
+{
+    byte data[length-8];
+};
+
+struct Vehicle_MovementView
+{
+    byte data[length-8];
+};
+
+struct Anchor_AIObserverView
+{
+    byte data[length-8];
+};
+
+struct Deployable_ObserverView
+{
+    byte data[length-8];
+};
+
+struct Deployable_NPCObserverView
+{
+    byte data[length-8];
+};
+
+struct Deployable_HardpointView
+{
+    byte data[length-8];
+};
+
+struct Turret_BaseController
+{
+    byte data[length-8];
+};
+
+struct Turret_ObserverView
+{
+    byte data[length-8];
+};
+
+struct Outpost_ObserverView
+{
+    byte data[length-8];
+};
+
+struct ResourceNode_ObserverView
+{
+    byte data[length-8];
+};
+
+struct CarryableObject_ObserverView
+{
+    byte data[length-8];
+};
+
+struct LootStoreExtension_LootObjectView
+{
+    byte data[length-8];
+};
+
+
+struct FILE
+{   
+    struct DESCRIPTION 
+    {
+        char NSRD[4]; // Network stream replay description
+        uint version;
+
+        uint header_length;
+        uint meta_length;
+        uint desc_length;
+        uint offset_data;
+        uint unknown;
+
+        uint protocol_version; //could this be the port?
+
+        uint64 microsecond_epoch; // utc
+
+        uint _5000;
+        uint unknown2;
+    } description;
+
+    struct INDEX
+    {
+        char NSRI[4]; // network stream replay index
+        uint version;
+        uint unknown;
+        uint unknown;
+        uint count;
+        uint index_offset;
+        uint offsets[count]; 
+    } index;
+
+    struct META
+    {
+        uint _4;
+        uint zone_id;
+        string desc;
+
+        string date_time1; // in computers timezone
+
+        float position[3];
+        float rotation[4]; // quaternion
+        uint64 character_guid;
+        string username;
+        byte unknown2[18];
+        string firefall_version;
+
+        uint64 microsecond_epoch; // utc
+
+        uint month;
+        uint day;
+        uint year_irl;
+        uint year_fictional;
+        float fucking_timestamp_stored_as_a_fucking_float_kill_me; // utc
+
+        local ulong count = FTell();
+
+        string date_time2;
+
+        byte padding[128-(FTell()-count)];
+
+        byte unk[18];
+        double ingame_time;
+        byte unk2[5];
+
+
+    } meta;
+
+
+    struct KEYFRAME
+    {
+        uint timestamp;
+        ushort length;
+        ushort unk;
+        byte id[8]; //  cid - first byte for players??? the first byte here seems to be an id for where the data is supposed to go
+        
+        switch(id[0])
+        {
+            case 0:
+                //Printf("%d - %u\n",id[0], FTell());
+                GENERIC data;
+                break;
+
+            //case 1:
+            //    ? data;
+            //    break;
+
+            case 2:
+                Character_BaseController data;
+                break;
+            case 3:
+                Character_NPCController data;
+                break;
+            case 4:
+                Character_MissionAndMarkerController data;
+                break;
+            case 5:
+                Character_CombatController data;
+                break;
+            case 6:
+                Character_LocalEffectsController data;
+                break;
+            case 7:
+                Character_SpectatorController data;
+                break;
+            case 8:
+                Character_ObserverView data;
+                break;
+            case 9:
+                Character_EquipmentView data;
+                break;
+            case 10:
+                Character_AIObserverView data;
+                break;
+            case 11:
+                Character_CombatView data;
+                break;
+            case 12:
+                Character_MovementView data;
+                break;
+            case 13:
+                Character_TinyObjectView data;
+                break;
+            case 14:
+                Character_DynamicProjectileView data;
+                break;
+
+            //case 15:
+            //    ? data;
+            //    break;
+
+            case 16:
+                Melding_ObserverView data;
+                break;
+
+            //case 17:
+            //    ? data;
+            //    break;
+
+            case 18:
+                MeldingBubble_ObserverView data;
+                break;
+
+            //case 19:
+            //    ? data;
+            //    break;
+
+            case 20:
+                AreaVisualData_ObserverView data;
+                break;
+            case 21:
+                AreaVisualData_ParticleEffectsView data;
+                break;
+            case 22:
+                AreaVisualData_MapMarkerView data;
+                break;
+            case 23:
+                AreaVisualData_TinyObjectView data;
+                break;
+            case 24:
+                AreaVisualData_LootObjectView data;
+                break;
+            case 25:
+                AreaVisualData_ForceShieldView data;
+                break;
+
+            //case 26:
+            //    ? data;
+            //    break;
+
+            case 27:
+                Vehicle_BaseController data;
+                break;
+            case 28:
+                Vehicle_CombatController data;
+                break;
+            case 29:
+                Vehicle_ObserverView data;
+                break;
+            case 30:
+                Vehicle_CombatView data;
+                break;
+            case 31:
+                Vehicle_MovementView data;
+                break;
+
+            //case 32:
+            //    ? data;
+            //    break;
+
+            case 33:
+                Anchor_AIObserverView data;
+                break;
+
+            //case 34:
+            //    ? data;
+            //    break;
+
+            case 35:
+                Deployable_ObserverView data;
+                break;
+            case 36:
+                Deployable_NPCObserverView data;
+                break;
+            case 37:
+                Deployable_HardpointView data;
+                break;
+
+            //case 38:
+            //    ? data;
+            //    break;
+
+            case 39:
+                Turret_BaseController data;
+                break;
+            case 40:
+                Turret_ObserverView data;
+                break;
+
+            //case 41:
+            //    ? data;
+            //    break;
+            //case 42:
+            //    ? data;
+            //    break;
+            //case 43:
+            //    ? data;
+            //    break;
+            //case 44:
+            //    ? data;
+            //    break;
+
+            case 45:
+                Outpost_ObserverView data;
+                break;
+
+            //case 46:
+            //    ? data;
+            //    break;
+            //case 47:
+            //    ? data;
+            //    break;
+
+            case 48:
+                ResourceNode_ObserverView data;
+                break;
+
+            //case 49:
+            //    ? data;
+            //    break;
+            //case 50:
+            //    ? data;
+            //    break;
+
+            case 51:
+                CarryableObject_ObserverView data;
+                break;
+
+            //case 52:
+            //    ? data;
+            //    break;
+
+            case 53:
+                LootStoreExtension_LootObjectView data;
+                break;
+
+            //case 54:
+            //    ? data;
+            //    break;
+
+            default:          
+                byte data[length-8]; 
+                Printf("never seen this before %d - %u\n",id[0], FTell());
+                break;
+        }
+
+
+    
+    };
+
+    // read data
+    struct KEYFRAMES
+    {
+        while(!FEof())
+        {
+            KEYFRAME keyframe;
+        }
+    } keyframes;
+
+
+} file;		

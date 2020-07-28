@@ -1,0 +1,29 @@
+//--------------------------------------
+// 010 Editor Template
+// File: worldMap
+// Author: freakbyte
+//--------------------------------------
+
+struct FILE
+{   
+    struct HEADER
+    {
+        char GTNO[4];
+        uint version[3];
+        uint last; //filename
+        uint second; //filename
+        float location[9];
+        
+        uint _25601;
+        byte padding;
+      
+        uint reminder;
+        
+        uint payloadExtractedSize;
+        uint payloadCompressedSize;
+        ushort zlibDefaultCompression; // 78 9C
+
+        byte deflated[payloadCompressedSize-2];
+
+    } header;
+} file;

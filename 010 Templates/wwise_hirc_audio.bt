@@ -1,0 +1,19 @@
+//--------------------------------------
+// 010 Editor Template
+// File: wwise_hirc_audio
+// Author: freakbyte
+//--------------------------------------
+
+byte type;
+uint len;
+uint id;
+byte idk2[25];
+uint embed;
+uint audioFile;
+uint audioSource;
+
+if(embed == 0)
+{
+    uint offset;
+    uint length;
+}

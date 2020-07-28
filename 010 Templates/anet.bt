@@ -1,0 +1,189 @@
+//--------------------------------------
+// 010 Editor Template
+// File: .anet
+// Author: freakbyte
+//--------------------------------------
+
+
+void Align(uint alignment)
+{
+    local uint rest = FTell() % alignment;
+    if(rest > 0)
+    {
+        byte alignmentPadding[alignment - rest];
+    }
+}
+
+
+struct DataType00
+{
+    
+};
+
+struct DataType02
+{
+    uint _0;
+    uint length;
+    uint alignment;
+    byte data[length - 16];    
+};
+struct DataType03
+{
+    uint _0;
+    uint length;
+    uint alignment;
+    
+    byte pad[16];
+    uint unk, unk, BoneNum, unk, unk;
+    byte data[length - 16];
+    ushort length2;
+    byte data2[length2-2];
+    
+};
+struct DataType11
+{
+    uint unk, unk, unk;
+    uint len1;
+    uint len2;
+    uint len3;
+    byte data3[len3-4];
+};
+struct DataType61
+{
+    uint unk, unk, unk, unk, unk;
+    uint length;
+    byte data[length-4];
+};
+
+
+typedef struct
+{
+    uint type;
+    switch(type)
+    {
+        case 0: 
+            DataType00 data;
+        case 2:
+            DataType02 data;
+            break;
+        case 3:
+            DataType03 data;
+            break;
+        case 11:
+            DataType11 data;
+            break;
+        case 61:
+            DataType61 data;
+            break;
+        default:
+            break;
+    }
+} Node <read=NodeInfo>;
+
+
+
+
+
+typedef struct
+{   
+    uint _20, _0, type;
+
+    if(type==7)
+    {
+        uint unk, unk, unk, unk, unk;
+        uint length;
+        uint unk;
+        byte data[length];
+    
+    }
+    else if(type==13)
+    {
+        uint index; 
+        uint id;
+        uint unk, unk, unk;
+        uint length;
+        uint alignment, unk, unk;
+
+        local uint64 end = FTell() + length;
+        
+        while(FTell() < end )
+        {
+            struct Node child;
+            Align(alignment);
+        }
+
+    }
+    else if(type==1)
+    {
+        uint unk, unk, unk, unk, unk;
+        uint length;
+        uint unk, unk;
+        byte data[length];
+    }
+    else if(type==2)
+    {
+        uint unk, unk, unk, unk, unk;
+        uint length;
+        uint unk, unk, unk;
+        byte data[length];
+    }
+    else if(type==3)
+    {
+        uint unk, unk, unk, unk, unk;
+        uint length;
+        if(length != 48)
+        {
+            //uint asd[-1];
+        }
+        uint unk, unk, unk;
+        byte data[length];
+    }
+    else if(type==4)
+    {
+        uint unk, unk, unk, unk, unk;
+        uint length;
+        uint unk, unk, unk;
+        byte data[length];
+    }
+    else if(type==10)
+    {
+        uint unk, unk, unk, unk, unk;
+        uint length;
+        uint unk, unk, unk;
+        byte data[length];
+    }
+    else if(type==12)
+    {
+        uint unk, unk, unk, unk, unk;
+        uint length;
+        uint unk;
+
+        uint asd[40];
+        byte data[length-(40*4)];
+    };
+
+} Section <read=SectionInfo>;
+
+string SectionInfo(Section &section)
+{
+    string ret;
+    SPrintf(ret, "Type %d", (int)section.type );
+    return ret;
+}
+string NodeInfo(Node &node)
+{
+    string ret;
+    SPrintf(ret, "Type %d", (int)node.type );
+    return ret;
+}
+
+local uint64 size = FileSize();
+
+while(size - FTell() > 48 )
+{
+    struct Section section<comment=LastSectionType>;
+}
+
+
+
+// 9040, 50192 41104

@@ -1,0 +1,11 @@
+//--------------------------------------
+// 010 Editor Template
+// File: wwise_hirc_event
+// Author: freakbyte
+//--------------------------------------
+
+byte type;
+uint length;
+uint id;
+uint eaCount;
+uint eventActionIds[eaCount];
