@@ -1,10 +1,12 @@
 //--------------------------------------
 // 010 Editor Template
 // File: .gtchunk
-// Author: freakbyte
+// Author: freakbyte, FallenAvatar, Arkii
 //--------------------------------------
 
 local uint64 NODE_TAG_MAGIC = 1363845299501208301;
+// 3977403373
+// 1413563424
 
 local uint32 DATA1_MAGIC = 1096040772;
 local uint32 DATA2_MAGIC = 844382532;
@@ -12,27 +14,57 @@ local uint32 DATA2_MAGIC = 844382532;
 local uint64 check64 = 0;
 local uint32 check32 = 0;
 
+typedef float vec3[3] <read=Vec3Display>;
+
 struct NODE;
 struct NODE {
     uint64 magicTag<hidden=true>;
-    uint32 nodeType;
+    enum <uint32> {
+        Root = 262144,
+        Lod = 262145,
+        SubChunk = 262146
+    } nodeType;
     uint32 len;
 
     local uint64 end = FTell() + len;
-    check64 = ReadUInt64();
-    if( check64 != NODE_TAG_MAGIC ) {
-        do {
-            byte data<name="data">;
-            check64 = ReadUInt64();
-        } while( FTell() < end && check64 != NODE_TAG_MAGIC );
+
+    if (nodeType == Root)
+    {
+        uint version;
+        uint64 timestamp;
+        uint numLods;
+
+        end = FTell() + (len - 16);
     }
+    else if (nodeType == Lod)
+    {
+        uint lodIdx;
+        uint numSubChunks <read=ReadNumSubChunks>;
+        FSkip(-4);
+        float someFloat <read=SomeSubChunkFloat>;
+        uint unk1;
+        uint compressedSize;
+        uint uncompressedSize;
+
+        end = FTell() + (len - 20);
+    }
+    else if (nodeType == SubChunk)
+    {
+        uint unk1;
+        uint compressedSize;
+        uint uncompressedSize;
+        vec3 boundsMin <read=Vec3Display>; // names a guess for these
+        vec3 boundsMax;
+
+        end = FTell() + (len - 36);
+    }
+
+    check64 = ReadUInt64();
     if( check64 == NODE_TAG_MAGIC ) {
         
         while( FTell() < end ) {
             NODE child;
         }
-    } else if( end - FTell() > 0 ) {
-        byte data2[end - FTell()];
     }
 };
 struct DATA1 {
@@ -60,4 +92,28 @@ while( !FEof() && (check32 == DATA1_MAGIC || check32 == DATA2_MAGIC) ) {
     DATA data;
     if( FTell() + 4 <= FileSize() )
         check32 = ReadUInt();
+}
+
+string ReadNumSubChunks(uint numSubChunks)
+{
+    local uint numSubChunksCount = 1 << 2 * numSubChunks;
+    local string count;
+    SPrintf(count, "%i", numSubChunksCount);
+    return count;
+}
+
+string SomeSubChunkFloat(uint numSubChunks)
+{
+    local uint num = 1 << numSubChunks;
+    local float thing = 512.0f / (float)num;
+    local string floatThing;
+    SPrintf(floatThing, "%f", thing);
+    return floatThing;
+}
+
+string Vec3Display(vec3 vec)
+{
+    string s;   
+    SPrintf( s, "%f, %f, %f", vec[0], vec[1], vec[2] );
+    return s;
 }
