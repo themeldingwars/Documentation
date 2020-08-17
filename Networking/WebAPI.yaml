@@ -91,6 +91,15 @@ paths:
     post:
       tags:
         - clientapi
+      requestBody:
+        description: Build version
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BuildVersion'
+            example:
+              build: 'beta-1869'
       responses:
         200:
           description: Success
@@ -140,6 +149,34 @@ paths:
             $ref: '#/components/schemas/Signature2'
           required: true
           description: Red5 Security Signature Header 2
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginCheck'
+  /api/v2/accounts/change_language:
+    post:
+      tags:
+        - clientapi
+      summary: Tells the server which language to use
+      parameters:
+        - in: header
+          name: X-Red5-Signature
+          schema:
+            $ref: '#/components/schemas/Signature'
+          required: true
+          description: Red5 Security Signature Header
+      requestBody:
+        description: Select language
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeLanguage'
+            example:
+              language: 'en'
       responses:
         200:
           description: Success
@@ -229,6 +266,11 @@ components:
           type: integer
         title:
           type: string
+    BuildVersion:
+      type: object
+      properties:
+        build:
+          type: string
     Friend:
       type: object
       properties:
@@ -250,6 +292,13 @@ components:
           type: array
           items:
             type: string
+      example:
+        zone_list: []
+    ChangeLanguage:
+      type: object
+      properties:
+        language:
+          type: string
     OracleTicketRequest:
       type: object
       properties:
@@ -416,7 +465,132 @@ components:
           type: integer
       example:
         characters:
-          -
+          - character_guid: 9168405683928066011
+            name: DarkCisum
+            unique_name: DARKCISUM
+            is_dev: false
+            is_active: true
+            created_at: '2013-01-27T23:02:19+00:00'
+            title_id: 135
+            time_played_secs: 2914607
+            needs_name_change: false
+            max_frame_level: 40
+            frame_sdb_id: 76337
+            current_level: 23
+            gender: 0
+            current_gender: male
+            visuals:
+              id: 0
+              race: 0
+              gender: 0
+              skin_color:
+                id: 77181
+                value:
+                  color: 413270016
+              voice_set:
+                id: 1000
+              head:
+                id: 10002
+              eye_color:
+                id: 77183
+                value:
+                  color: 1780760800
+              lip_color:
+                id: 1
+                value:
+                  color: 4294903873
+              hair_color:
+                id: 77194
+                value:
+                  color: 839712801
+              facial_hair_color:
+                id: 77194
+                value:
+                  color: 839712801
+              head_accessories:
+                - id: 10089
+                  value:
+                    color: 839712801
+                - id: 10106
+                  value:
+                    color: 839712801
+              ornaments:
+                - id: 10270
+                - id: 10224
+                - id: 10061
+              eyes:
+                id: 10001
+              hair:
+                id: 10089
+                color:
+                  id: 77194
+                  value: 839712801
+              facial_hair:
+                id: 10106
+                color:
+                  id: 77194
+                  value: 839712801
+              glider:
+                id: 0
+              vehicle:
+                id: 0
+              decals:
+                - sdb_id: 10000
+                  color: 4294967295
+                  transform:
+                    - 0.05246
+                    - 0.019623
+                    - 0
+                    - 0.007484
+                    - -0.02002
+                    - -0.051758
+                    - 0.018127
+                    - -0.048492
+                    - 0.021362
+                    - 0.108154
+                    - -0.105469
+                    - 1.495117
+              warpaint_id: 77307
+              warpaint:
+                - 2356215808
+                - 276957281
+                - 2415919104
+                - 2097152
+                - 1384782051
+                - 4236511329
+                - 4236511329
+              decalgradients: []
+              warpaint_patterns:
+                - sdb_id: 10022
+                  transform:
+                    - 7727
+                    - 1024
+                    - 1400
+                    - 0
+                  usage: 0
+              visual_overrides: []
+            gear:
+              - slot_type_id: 1
+                sdb_id: 87344
+                item_guid: 744156780720037100
+              - slot_type_id: 2
+                sdb_id: 87830
+                item_guid: 744159850480592100
+              - slot_type_id: 7
+                sdb_id: 89802
+                item_guid: 744155613575695100
+              - slot_type_id: 116
+                sdb_id: 93951
+                item_guid: 743917192479176400
+              - slot_type_id: 8
+                sdb_id: 89861
+                item_guid: 744155613575695600
+              - slot_type_id: 9
+                sdb_id: 89916
+                item_guid: 744155613575695900
+              - slot_type_id: 6
+                sdb_id: 89966
+                item_guid: 744155613575696100
         race: human
         is_dev: false
         rb_balance: 386
@@ -478,6 +652,10 @@ components:
           type: integer
         visuals:
           $ref: '#/components/schemas/Visuals'
+        gear:
+          type: array
+          items:
+            $ref: '#/components/schemas/Gear'
       example:
         character_guid: 9168405683928066011
         name: DarkCisum
@@ -605,3 +783,121 @@ components:
           - slot_type_id: 6
             sdb_id: 89966
             item_guid: 744155613575696100
+    Color:
+      type: object
+      properties:
+        id:
+          type: integer
+        value:
+          type: object
+          properties:
+            color:
+              type: integer
+    ColorWithIdentifier:
+      type: object
+      properties:
+        id:
+          type: integer
+        color:
+          $ref: '#/components/schemas/Color'
+    Identifier:
+      type: object
+      properties:
+        id:
+          type: integer
+    Decal:
+      type: object
+      properties:
+        sdb_id:
+          type: integer
+        color:
+          type: integer
+        transform:
+          type: array
+          items:
+            type: number
+    Paint:
+      type: object
+      properties:
+        sdb_id:
+          type: integer
+        color:
+          type: integer
+        transform:
+          type: array
+          items:
+            type: number
+        usage:
+          type: integer
+    Visuals:
+      type: object
+      properties:
+        id:
+          type: integer
+        race:
+          type: integer
+        gender:
+          type: integer
+        skin_color:
+          $ref: '#/components/schemas/Color'
+        voice_set:
+          $ref: '#/components/schemas/Identifier'
+        head:
+          $ref: '#/components/schemas/Identifier'
+        eye_color:
+          $ref: '#/components/schemas/Color'
+        lip_color:
+          $ref: '#/components/schemas/Color'
+        hair_color:
+          $ref: '#/components/schemas/Color'
+        facial_hair_color:
+          $ref: '#/components/schemas/Color'
+        head_accessories:
+          type: array
+          items:
+            $ref: '#/components/schemas/Color'
+        ornaments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Identifier'
+        eyes:
+          $ref: '#/components/schemas/Identifier'
+        hair:
+          $ref: '#/components/schemas/ColorWithIdentifier'
+        facial_hair:
+          $ref: '#/components/schemas/ColorWithIdentifier'
+        glider:
+          $ref: '#/components/schemas/Identifier'
+        vehicle:
+          $ref: '#/components/schemas/Identifier'
+        decals:
+          type: array
+          items:
+            $ref: '#/components/schemas/Decal'
+        warpaint_id:
+          type: integer
+        warpaint:
+          type: array
+          items:
+            type: integer
+        decalgradients:
+          type: array
+          items:
+            type: object
+        warpaint_patterns:
+          type: array
+          items:
+            $ref: '#/components/schemas/Paint'
+        visual_overrides:
+          type: array
+          items:
+            type: object
+    Gear:
+      type: object
+      properties:
+        slot_type_id:
+          type: integer
+        sdb_id:
+          type: integer
+        item_guid:
+          type: integer
