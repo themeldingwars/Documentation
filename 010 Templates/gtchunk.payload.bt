@@ -1,0 +1,239 @@
+//------------------------------------------------
+//--- 010 Editor v9.0.1 Binary Template
+//
+//      File: gtchunk compressed node
+//   Authors: Arkii
+//   Version: 
+//   Purpose: 
+//  Category: 
+// File Mask: 
+//  ID Bytes: 
+//   History: 
+//------------------------------------------------
+
+local uint64 NODE_TAG_MAGIC = 0x12ED5A12ED5B12ED;
+
+struct Node;
+
+struct NodeHeader {
+    uint64 magicTag<hidden=true>;
+    uint nodeType;
+    uint32 len;
+};
+
+struct vec3 {
+    float x;
+    float y;
+    float z;
+};
+
+
+// Geometry Node Data
+//============================
+
+struct GeoVertData {
+    uint vertCount;
+    vec3 verts[vertCount];
+};
+
+struct indiceType1 {
+    ushort a;
+    ushort b;  
+    ushort c;
+};
+
+struct indiceType2 {
+    byte a;
+    byte b;
+    byte c;
+};
+
+struct indiceBlock {
+    uint count;
+    uint indiceType;
+
+    if (indiceType == 393218) {
+        indiceType1 indices[count];
+    }
+    else if (indiceType == 196609) {
+        indiceType2 indices[count];
+    }
+    
+};
+
+struct matsDataBlock {
+    uint count;
+    uint id; // Might be type as well?
+    byte data[count];
+};
+
+struct moppDataBlock {
+    float floats[4];
+    uint size;
+    byte data[size];
+
+    byte unk1;
+    ushort unk2;
+
+    uint numShorts;
+    ushort shorts[numShorts];
+};
+
+struct GeometryData(uint nodeSize) {
+    local uint startPos = FTell();    
+
+    uint magic;
+    ushort version; // ? should be 3
+    ushort revision; // ? checked if less than 5
+    uint unk1;
+    uint numPhysicsMatIds;
+    uint physicsMatIds[numPhysicsMatIds];
+
+    uint numVertBlocks;
+    GeoVertData vertBlocks[numVertBlocks] <optimize=false>;
+
+    uint numIndiceBlocks;
+    indiceBlock indiceBlocks[numIndiceBlocks] <optimize=false>;
+
+    uint numMatItems;
+    matsDataBlock matBlocks[numMatItems] <optimize=false>;
+
+    uint numMoppBlocks;
+    moppDataBlock moppBlocks[numMoppBlocks] <optimize=false>;
+
+    local uint endPos = FTell(); 
+    local uint leftSize = nodeSize - (endPos - startPos);
+    byte havokData[leftSize];
+};
+
+// Props Dode Data
+//============================
+
+struct PropsDataChunk(uint nodeSize) {
+    while( FTell() < nodeSize ) {
+        Node subNode;
+    }
+};
+
+struct PropNodeEntry {
+    byte header[64];
+    uint unk1;
+    float unk2[6];
+    uint unk4;
+};
+
+// Mesh instances ?
+//============================
+
+struct MeshInstanceBlock {
+ushort count;
+    ushort unk1;
+    uint unk2;
+    uint unk3;
+
+    uint unk4;
+    uint unk5;
+
+    float unkFloat[6];
+    uint64 unk6; // not on 262659 node id
+    uint unk7;
+    uint unk8;
+    byte unk9[1100]; // some mat stuff sub_19B1220
+
+    uint unk10;
+};
+
+// Terrain Chunk 
+//============================
+
+struct TerrainChunk_type4(uint nodeSize) {
+    uint count;
+
+    uint unk1;
+    uint unk2;
+    uint unk3;
+    float unk4[3];
+    float unk5[3];
+    float unk6[3];
+    float unk7;
+    float unk8[6];
+    uint unk9;
+    byte unk10[16];
+    uint unk11;
+    ushort unk12;
+    uint unk13;
+
+    ushort unk14[unk13];
+
+    uint unk15;
+    byte unk16;
+
+    uint unk17[6];
+    uint unk18;
+};
+
+struct TerrainChunk(uint nodeSize) {
+    while( FTell() < nodeSize ) {
+        NodeHeader header;
+        if (header.nodeType == 4) {
+            TerrainChunk_type4 data(header.len);
+            byte dataLeft[header.len - sizeof(data)];
+        }
+        else {
+            byte data[header.len];
+        }
+    }
+};
+
+// 
+//============================
+
+struct Node {
+    uint64 magicTag<hidden=true>;
+    enum <uint32> {
+            Terrain = 262400,
+            Geometry = 262401,
+            Geometry2 = 262405,
+            Geometry3 = 262403,
+            PropsNode = 262656,
+            PropEntry = 327697
+        } nodeType;
+        uint32 len;
+
+    local uint64 startPos = FTell();
+
+    if (nodeType == Geometry || nodeType == Geometry2 || nodeType == Geometry3) {
+        GeometryData data(len);
+        byte geoLeftData[len - sizeof(data)];
+    }
+    else if (nodeType == Terrain) {
+        TerrainChunk data(len);
+        //byte leftData[len - sizeof(data)];
+    }
+    else if (nodeType == PropsNode) {
+        PropsDataChunk data(startPos + len);
+    }
+    else if (nodeType == PropEntry) {
+        PropNodeEntry entry;
+        byte leftData[len - sizeof(entry)];
+    }
+    else if (nodeType == 262672) {
+        MeshInstanceBlock data;
+        byte leftData[len - sizeof(data)];
+    }
+    else {
+        byte data[len];
+    }
+};
+
+while( FTell() < FileSize() ) {
+    Node node ;
+}
+
+// display formating
+string Vec3Display(vec3 vec)
+{
+    string s;   
+    SPrintf( s, "%f, %f, %f", vec.x, vec.y, vec.z );
+    return s;
+}
