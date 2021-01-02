@@ -82,6 +82,57 @@ struct Doodad {
     float unk9[5];
 };
 
+
+struct LengthDefinedString {
+    uint32 len;
+    char str[len];
+};
+
+
+struct MeldingPerimiterSet {
+    uint32 nameLen<hidden=true>;
+    char name[nameLen];
+    uint32 controlPoints;
+    uint32 unk1;
+
+    //DataUnkBytes data()<name="UnknownDataFF">;
+    // Time Bomb:            4 points, 0xEA 0x01.  56+4 == 60  bytes.
+    // New Eden Melding 01: 18 points, 0x59 0x06. 204+4 == 208 bytes.
+    // Moisture farm:       20 points, 0x4D 0x02.  74+4 == 78  bytes.
+    // ChosenForst:          9 points, 0x9E 0x02.  84+4 == 88  bytes.
+    // MeldingDefBase:      17 points, 0x6B 0x04. 142+4 == 146 bytes.
+    // Skip this section of 0xFF for now
+    while( true ) {
+        byte b<hidden=true>;
+        if (b != -1) {
+            FSkip( -1 );
+            break;
+        }
+    }
+
+    uint32 unk2;
+    uint32 perimiterCount<hidden=true>;
+    LengthDefinedString perimiters[perimiterCount] <optimize=false>;
+    DataUnkBytes data(9)<name="UnknownData3">;
+};
+
+
+struct DropShipWaypointPathNode {
+    float coords[3];
+    float rotation[4]; // Maaaybe
+    uint actionLen<hidden=true>;
+    if (actionLen > 0) {   
+        char action[actionLen];
+    }
+};
+
+struct DropShipWaypointPath {
+    uint unk1;
+    uint unk2;
+    uint nodeCount<hidden=true>;
+    DropShipWaypointPathNode nodes[nodeCount] <optimize=false>;
+};
+
 struct NODE;
 struct NODE
 {
@@ -106,9 +157,9 @@ struct NODE
         TYPE_U016_NODE = 900, // 0x84030000
         TYPE_U017_NODE = 800, // 0x20030000
         TYPE_U018_NODE = 501, // 0xF5010000
-        TYPE_U019_NODE = 131584, // 0x00020200 has children, pvp arena info?
-        TYPE_U020_NODE = 5, // 0x05000000 command? (set perimiter)? uint32 len; byte data[len]; repeat, with a bunch of 0xff in the middle??? ends with a bunch of 0x00
-        TYPE_U021_NODE = 133120, // 0x00080200 waypoint/path data
+        TYPE_U019_NODE = 131584, // 0x00020200 melding perimiter set parent node
+        TYPE_U020_NODE = 5, // 0x05000000 melding perimiter set node
+        TYPE_U021_NODE = 133120, // 0x00080200 dropship waypoint/path data
         TYPE_U022_NODE = 132864, // 0x00070200 large data blob
         TYPE_U023_NODE = 132096, // 0x00040200 GTChunk info or refrence? has 1 65536 and lots of 65793 nodes
         TYPE_U024_NODE = 65536, // 0x00000100 xy coords/bounds? 5 int32
@@ -140,6 +191,10 @@ struct NODE
         DataU004 data;
     } else if( typeID == TYPE_U007_NODE ) {
         DataU007 data;
+    } else if( typeID == TYPE_U020_NODE ) {
+        MeldingPerimiterSet data;
+    } else if( typeID == TYPE_U021_NODE ) {
+        DropShipWaypointPath data;
     } else if( typeID == TYPE_U024_NODE ) {
         DataU024 data;
     } else if( typeID == TYPE_Vec3i_NODE ) {
