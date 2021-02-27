@@ -2,8 +2,8 @@
 //--- 010 Editor v10.0.2 Binary Template
 //
 //      File: .zone
-//   Authors: FallenAvatar
-//   Version: 1.0
+//   Authors: FallenAvatar, Xsear
+//   Version: 1.1
 //  Category: Game
 // File Mask: *.zone
 //  ID Bytes: ZONE
@@ -20,8 +20,40 @@ struct HEADER {
 
 local uint64 NODE_MAGIC_HEADER = 0x12ED5A12ED5B12ED;
 
+
 struct DataUnkBytes(int dataSize) {
     byte data[dataSize]<name="Bytes">;
+};
+
+struct LengthDefinedString {
+    uint32 len;
+    char str[len];
+};
+
+struct Vec31 {
+    int32 X<name="X">;
+    int32 Y<name="Y">;
+    int32 Z<name="Z">;
+};
+
+struct Vec3f {
+    float X<name="X">;
+    float Y<name="Y">;
+    float Z<name="Z">;
+};
+
+struct Vec4f {
+    float X<name="X">;
+    float Y<name="Y">;
+    float Z<name="Z">;
+    float W<name="W">;
+};
+
+struct Mat44f {
+    float row1[4];
+    float row2[4];
+    float row3[4];
+    float row4[4];
 };
 
 struct DataU001 {
@@ -42,37 +74,23 @@ struct DataU007 {
     float data3;
 };
 
-struct DataU024 {
-    int32 unk;
-    int32 xMin;
-    int32 xMax;
-    int32 yMin;
-    int32 yMax;
+struct ChunkZoneRange {
+    uint32 cubeface;
+    uint32 min_chunk_x;
+    uint32 max_chunk_x;
+    uint32 min_chunk_y;
+    uint32 max_chunk_y;
 };
 
-struct Vec31 {
-    int32 X<name="X">;
-    int32 Y<name="Y">;
-    int32 Z<name="Z">;
-};
-
-struct Vec4f {
-    float X<name="X">;
-    float Y<name="Y">;
-    float Z<name="Z">;
-    float W<name="W">;
-};
-
-struct Mat44f {
-    float row1[4];
-    float row2[4];
-    float row3[4];
-    float row4[4];
+struct ChunkRef {
+    uint32 chunk_x;
+    uint32 chunk_y;
+    uint32 chunk_record_id;
 };
 
 struct Doodad {
-    uint32 unk1;
-    Vec4f unk2[4];
+    uint32 prop_record_id;
+    Vec4f transform[4];
     uint32 unk3;
     uint32 unk4;
     int32 unk5;
@@ -82,55 +100,187 @@ struct Doodad {
     float unk9[5];
 };
 
-
-struct LengthDefinedString {
-    uint32 len;
-    char str[len];
-};
-
-
 struct MeldingPerimiterSet {
     uint32 nameLen<hidden=true>;
     char name[nameLen];
     uint32 controlPoints;
+    uint32 bitfieldBitLength;
+    byte bitfield[Ceil(bitfieldBitLength/8.0)];
     uint32 unk1;
-
-    //DataUnkBytes data()<name="UnknownDataFF">;
-    // Time Bomb:            4 points, 0xEA 0x01.  56+4 == 60  bytes.
-    // New Eden Melding 01: 18 points, 0x59 0x06. 204+4 == 208 bytes.
-    // Moisture farm:       20 points, 0x4D 0x02.  74+4 == 78  bytes.
-    // ChosenForst:          9 points, 0x9E 0x02.  84+4 == 88  bytes.
-    // MeldingDefBase:      17 points, 0x6B 0x04. 142+4 == 146 bytes.
-    // Skip this section of 0xFF for now
-    while( true ) {
-        byte b<hidden=true>;
-        if (b != -1) {
-            FSkip( -1 );
-            break;
-        }
-    }
-
-    uint32 unk2;
     uint32 perimiterCount<hidden=true>;
     LengthDefinedString perimiters[perimiterCount] <optimize=false>;
     DataUnkBytes data(9)<name="UnknownData3">;
 };
 
-
-struct DropShipWaypointPathNode {
-    float coords[3];
-    float rotation[4]; // Maaaybe
+struct PathStep {
+    float position[3];
+    float orientation[4];
     uint actionLen<hidden=true>;
     if (actionLen > 0) {   
         char action[actionLen];
     }
 };
 
-struct DropShipWaypointPath {
+struct Path {
+    uint cce_id;
     uint unk1;
-    uint unk2;
-    uint nodeCount<hidden=true>;
-    DropShipWaypointPathNode nodes[nodeCount] <optimize=false>;
+    uint stepsCount<hidden=true>;
+    PathStep steps[stepsCount] <optimize=false>;
+};
+
+struct CameraSequence {
+    // WIP
+    uint cce_id;
+    byte unk1;
+    uint nameLen<hidden=true>;
+    char name[nameLen];
+    
+    Vec3f vec1;
+    Vec3f vec2;
+    Vec3f vec3;
+    Vec3f vec4;
+
+    ushort cameraNodesCount;
+    ushort cameraShotsCount;
+    ushort cameraShakesCount;
+    ushort cameraFadesCount;
+    ushort colorGradingsCount;
+    ushort npcsCount;
+    ushort dialogScriptsCount;
+    ushort soundEventsCount;
+    ushort pfxsCount;
+    ushort lightsCount;
+    
+    struct CameraNode {
+        uint nameLen<hidden=true>;
+        char name[nameLen];
+        Vec3f vec1;
+        Vec3f vec2;
+        Vec3f vec3;
+        Vec3f vec4;
+    
+        uint unk1;
+        if (unk1 == 5) {
+            uint targetBone1Len<hidden=true>;
+            char targetBone1[targetBone1Len]; // guess
+            
+            DataUnkBytes data(18)<name="UnknownDataCameraNode_1">;
+            
+            uint targetBone2Len<hidden=true>;
+            char targetBone2[targetBone2Len]; // guess    
+            
+            DataUnkBytes data(30)<name="UnknownDataCameraNode_2">;
+           
+        }
+        else {
+            DataUnkBytes data(56)<name="UnknownDataCameraNode">;
+        }
+
+
+    };
+    CameraNode cameraNodes[cameraNodesCount] <optimize=false>;
+
+    struct CameraShot {
+        uint nameLen<hidden=true>;
+        char name[nameLen];
+        DataUnkBytes data(33)<name="UnknownDataCameraShot">;
+    };
+    CameraShot cameraShots[cameraShotsCount] <optimize=false>;
+    
+    struct CameraShake {
+        uint nameLen<hidden=true>;
+        char name[nameLen];
+        DataUnkBytes data(46)<name="UnknownDataCameraShake">;
+    };
+    CameraShake cameraShakes[cameraShakesCount] <optimize=false>;
+    
+    struct CameraFade {
+        uint nameLen<hidden=true>;
+        char name[nameLen];
+        DataUnkBytes data(34)<name="UnknownDataCameraFade">;
+    };
+    CameraFade cameraFades[cameraFadesCount] <optimize=false>;
+
+    // TODO: ColorGrading
+
+    // WIP: NPC
+    /*
+    struct NPC {
+       uint nameLen<hidden=true>;
+       char name[nameLen];
+
+       uint unk1;
+        
+       // not that sure about these vecs, mostly just stepping forward
+       Vec3f vec1;
+       Vec3f vec2;
+       Vec3f vec3;
+       Vec3f vec4;
+       
+       ushort unk2_MeshComponentRefCount;
+       struct unk_MeshComponentRef {
+         uint str1Len<hidden=true>;
+         char str1[str1Len];
+         DataUnkBytes data(4)<name="UnknownDataMeshComponentRef">;
+       };
+       unk_MeshComponentRef unk_MeshComponentRefs[unk2_MeshComponentRefCount] <optimize=false>;
+    
+       ushort unk3_MaybeContentFlags; // actions or something?
+       if (unk3_MaybeContentFlags > 0) {
+         if (unk3_MaybeContentFlags == 2) {
+            uint unk4;
+            ushort unk5;
+            ushort unk6;
+            ushort unk7;
+            ushort unk7_2;
+            float unk8;
+            ushort unk9;
+            uint str10Len;
+            char str10[str10Len];
+         }
+         else if (unk3_MaybeContentFlags == 4) {
+            uint unk4;
+            ushort unk5;
+            ushort unk6;
+            ushort unk7;
+            float unk8;
+            ushort unk9;
+            uint str10Len;
+            char str10[str10Len];
+         }
+       }
+       
+    };
+    if (npcsCount > 0) {
+        NPC npcs[npcsCount] <optimize=false>;
+    }
+    */
+    // TODO: DialogEvents
+    // TODO: SoundEvents
+    // TODO: PFXs
+    // TODO: Lights
+};
+
+struct PropEncounterNameRegistry {
+    uint32 propCount<hidden=true>;
+    LengthDefinedString propNames[propCount] <optimize=false>;
+};
+
+struct WorldChunk {
+    // WIP
+    char magic[4];
+    char version[4];
+    DataUnkBytes data(24)<name="WorldChunkData_1">;
+    uint32 moppFormatDataLen;
+    DataUnkBytes data(8+moppFormatDataLen)<name="MoppFormatData">;
+    // yikes
+};
+
+struct ZoneTransferBounds {
+    // WIP
+    uint32 zoneID;
+    uint32 unk1;
+    // ...
 };
 
 struct NODE;
@@ -138,72 +288,87 @@ struct NODE
 {
     uint64 magic_hdr<hidden=true>;
     enum <uint32> {
-        TYPE_ROOT_NODE = 196608,
-        TYPE_U001_NODE = 135168, // 0x00100200 Loc?? 6 floats
-        TYPE_U002_NODE = 131072, // 0x00000200 uint32?
-        TYPE_U003_NODE = 131328, // 0x00010200 has children
-        TYPE_U004_NODE = 10000, // 0x10270000 Bounds?? 6 floats
-        TYPE_U005_NODE = 327681, // 0x01000500 Entity Def? has children
-        TYPE_U006_NODE = 401, // 0x91010000 Scale? 22 floats/ints
-        TYPE_U007_NODE = 1300, // 0x14050000 8 floats + a short?
-        TYPE_U008_NODE = 1400, // 0x78050000 ??? alpha mask??
-        TYPE_U009_NODE = 34, // 0x22000000
-        TYPE_U010_NODE = 304, // 0x30010000 some kind of mat4x4?
-        TYPE_U011_NODE = 1000, // 0xE8030000 rotation?
-        TYPE_U012_NODE = 601, // 0x59020000
-        TYPE_U013_NODE = 203, // 0xCB000000 mat3x4?
-        TYPE_U014_NODE = 1200, // 0xB0040000
-        TYPE_U015_NODE = 700, // 0xBC020000
-        TYPE_U016_NODE = 900, // 0x84030000
-        TYPE_U017_NODE = 800, // 0x20030000
-        TYPE_U018_NODE = 501, // 0xF5010000
-        TYPE_U019_NODE = 131584, // 0x00020200 melding perimiter set parent node
-        TYPE_U020_NODE = 5, // 0x05000000 melding perimiter set node
-        TYPE_U021_NODE = 133120, // 0x00080200 dropship waypoint/path data
-        TYPE_U022_NODE = 132864, // 0x00070200 large data blob
-        TYPE_U023_NODE = 132096, // 0x00040200 GTChunk info or refrence? has 1 65536 and lots of 65793 nodes
-        TYPE_U024_NODE = 65536, // 0x00000100 xy coords/bounds? 5 int32
-        TYPE_Vec3i_NODE = 65793, // 0x01010100 vec3? 3 int32
-        TYPE_U026_NODE = 131840, // 0x00030200 water data?
-        TYPE_U027_NODE = 133376, // 0x00090200 world chunk?
-        TYPE_U028_NODE = 136448, // 0x00150200 camera sequence data
-        TYPE_U029_NODE = 136704, // 0x00160200 zone transfer bounds?
-        TYPE_U030_NODE = 136960, // 0x00170200
-        TYPE_U031_NODE = 135680, // 0x00120200 prop encounter name registry
-        TYPE_U032_NODE = 136192, // 0x00140200 no-farclip doodads?
-        TYPE_Doodad_NODE = 327680, // 0x00000500 doodad
+        // nodes == layers
+        TYPE_ZONE_LAYER_PARENT = 196608,
+            TYPE_U001_NODE = 135168, // 0x00100200 6 floats, forming 2 points, they are bottom left and top right of zone though not all the way to the edge.
+            TYPE_SKYBOXRECORD_NODE = 131072, // 0x00000200
+            TYPE_DEFAULT_ENVIRONMENT_LAYER_PARENT = 131328, // 0x00010200 all zones have this
+                TYPE_U004_NODE = 10000, // 0x10270000 6 floats, forming 2 points. For some (indoor?) zones, they are the same.
+                TYPE_U005_PARENT = 327681, // 0x01000500
+                  TYPE_U006_NODE = 401, // 0x91010000 Scale? 22 floats/ints and 1 byte
+                  TYPE_U007_NODE = 1300, // 0x14050000 8 floats + a short?
+                  TYPE_U008_NODE = 1400, // 0x78050000 ??? alpha mask??
+                  TYPE_U009_NODE = 34, // 0x22000000
+                  TYPE_U010_NODE = 304, // 0x30010000 some kind of mat4x4?
+                  TYPE_U011_NODE = 1000, // 0xE8030000 rotation?
+                  TYPE_U012_NODE = 601, // 0x59020000
+                  TYPE_U013_NODE = 203, // 0xCB000000 mat3x4?
+                  TYPE_U014_NODE = 1200, // 0xB0040000
+                  TYPE_U015_NODE = 700, // 0xBC020000
+                  TYPE_U016_NODE = 900, // 0x84030000
+                  TYPE_U017_NODE = 800, // 0x20030000
+                  TYPE_U018_NODE = 501, // 0xF5010000
+            TYPE_MELDING_LAYER_PARENT = 131584, // 0x00020200
+              TYPE_MELDING_PERIMITER_NODE = 5, // 0x05000000
+            TYPE_PATH_NODE = 133120, // 0x00080200
+            TYPE_MELDING_HEIGHT_MAP_DATA_NODE = 132864, // 0x00070200 large data blob
+            TYPE_CHUNK_INFO_LAYER_PARENT = 132096, // 0x00040200
+              TYPE_CHUNK_ZONE_RANGE_NODE = 65536, // 0x00000100
+              TYPE_CHUNK_REF_NODE = 65793, // 0x01010100
+            TYPE_WATER_NODE = 131840, // 0x00030200 large data blob
+            TYPE_WORLD_CHUNK_IMPORT_NODE = 133376, // 0x00090200
+            TYPE_CAMERA_SEQUENCE_NODE = 136448, // 0x00150200
+            TYPE_ZONE_TRANSFER_BOUNDS_NODE = 136704, // 0x00160200 large data blob
+            TYPE_SUBZONE_REGION_NODE = 136960, // 0x00170200
+            TYPE_PROP_ENCOUNTER_NAME_REGISTRY_NODE = 135680, // 0x00120200
+            TYPE_PROP_TYPE_LAYER_PARENT = 136192, // 0x00140200
+              TYPE_DOODAD_NODE = 327680, // 0x00000500 doodad
     } typeID<name="NodeType">;
     uint32 dataLen<name="DataLength">;
 
     uint64 check<hidden=true>;
     FSkip( -8 ); // "skip" backwards
+    
+    local uint64 end = FTell() + dataLen;    
 
-    if( NODE_MAGIC_HEADER == check ) {  
-        local uint64 end = FTell() + dataLen;
+    if( NODE_MAGIC_HEADER == check ) {
         while( FTell() < end ) {
             NODE children<name="Child">;
         }
     } else if( typeID == TYPE_U001_NODE ) {
         DataU001 data;
-    } else if( typeID == TYPE_U002_NODE ) {
-        DataU002 data;
+    } else if( typeID == TYPE_SKYBOXRECORD_NODE ) {
+        uint skybox_record_id;
     } else if( typeID == TYPE_U004_NODE ) {
         DataU004 data;
     } else if( typeID == TYPE_U007_NODE ) {
         DataU007 data;
-    } else if( typeID == TYPE_U020_NODE ) {
-        MeldingPerimiterSet data;
-    } else if( typeID == TYPE_U021_NODE ) {
-        DropShipWaypointPath data;
-    } else if( typeID == TYPE_U024_NODE ) {
-        DataU024 data;
-    } else if( typeID == TYPE_Vec3i_NODE ) {
-        Vec31 data<name="Vec3i">;
-    } else if( typeID == TYPE_Doodad_NODE ) {
+    } else if( typeID == TYPE_MELDING_PERIMITER_NODE ) {
+        MeldingPerimiterSet data<name="MeldingPerimiterSet">;
+    } else if( typeID == TYPE_PATH_NODE ) {
+        Path data<name="Path">;
+    } else if( typeID == TYPE_CHUNK_ZONE_RANGE_NODE ) {
+        ChunkZoneRange data<name="ChunkZoneRange">;
+    } else if( typeID == TYPE_CHUNK_REF_NODE ) {
+        ChunkRef data<name="ChunkRef">;
+    } else if( typeID == TYPE_WORLD_CHUNK_IMPORT_NODE ) {
+        WorldChunk data<name="WorldChunk">;
+    } else if( typeID == TYPE_CAMERA_SEQUENCE_NODE ) { 
+        CameraSequence data<name="CameraSequence">;      
+    } else if( typeID == TYPE_ZONE_TRANSFER_BOUNDS_NODE ) {
+        ZoneTransferBounds data<name="ZoneTransferBounds">;
+    } else if( typeID == TYPE_PROP_ENCOUNTER_NAME_REGISTRY_NODE ) {
+        PropEncounterNameRegistry data<name="PropEncounterNameRegistry">;
+    } else if( typeID == TYPE_DOODAD_NODE ) {
         Doodad data<name="Doodad">;
     } else {
         DataUnkBytes data(dataLen)<name="UnknownData">;
     }
+
+    if ( FTell() < end ) {
+        local uint64 remaining = end-FTell();
+        DataUnkBytes data(remaining)<name="UnparsedData">;
+    } 
 };
 
 NODE root<name="Root">;
