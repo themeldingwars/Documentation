@@ -2,7 +2,7 @@
 //--- 010 Editor v9.0.1 Binary Template
 //
 //      File: gtchunk compressed node
-//   Authors: Arkii
+//   Authors: Arkii, Xsear
 //   Version: 
 //   Purpose: 
 //  Category: 
@@ -21,6 +21,7 @@ struct NodeHeader {
     uint32 len;
 };
 
+
 struct vec3 {
     float x;
     float y;
@@ -33,7 +34,7 @@ struct vec3 {
 
 struct GeoVertData {
     uint vertCount;
-    vec3 verts[vertCount];
+    vec3 verts[vertCount] <read=Vec3Display>;
 };
 
 struct indiceType1 {
@@ -85,7 +86,7 @@ struct GeometryData(uint nodeSize) {
     uint magic;
     ushort version; // ? should be 3
     ushort revision; // ? checked if less than 5
-    uint unk1;
+    uint unk1; // seems like a unique id
     uint numPhysicsMatIds;
     uint physicsMatIds[numPhysicsMatIds];
 
@@ -146,6 +147,18 @@ ushort count;
 // Terrain Chunk 
 //============================
 
+struct TerrainChunk_type0 {
+    uint unk1;
+    uint unk2;
+    uint unk3;
+    vec3 vec; 
+};
+
+struct TerrainChunk_type3 {
+    uint count;
+    uint data[count];
+};
+
 struct TerrainChunk_type4(uint nodeSize) {
     uint count;
 
@@ -156,20 +169,24 @@ struct TerrainChunk_type4(uint nodeSize) {
     float unk5[3];
     float unk6[3];
     float unk7;
-    float unk8[6];
-    uint unk9;
-    byte unk10[16];
-    uint unk11;
+    vec3 boundsMin <read=Vec3Display>;
+    vec3 boundsMax <read=Vec3Display>;
+    uint unk9; // Number of vertices?
+    byte unk10[16]; // Needs to be parsed
+    uint unk11; // (Triangles/unk15 * 3)
     ushort unk12;
     uint unk13;
+    
+    if (unk13 != 0xffffffff) { // unk2 is 0?
+        ushort unk14[unk13];
+    }
 
-    ushort unk14[unk13];
+    uint unk15; // Number of patch triangles?
 
-    uint unk15;
-    byte unk16;
-
-    uint unk17[6];
-    uint unk18;
+    byte unk16; // probably related?
+    uint materials[6];
+    
+    uint unk18_size; // client will attempt to allocate this number of bytes
 };
 
 struct TerrainChunk(uint nodeSize) {
@@ -178,6 +195,12 @@ struct TerrainChunk(uint nodeSize) {
         if (header.nodeType == 4) {
             TerrainChunk_type4 data(header.len);
             byte dataLeft[header.len - sizeof(data)];
+        }
+        else if (header.nodeType == 3) {
+            TerrainChunk_type3 data;
+        }
+        else if (header.nodeType == 0) {
+            TerrainChunk_type0 data;
         }
         else {
             byte data[header.len];
@@ -188,15 +211,72 @@ struct TerrainChunk(uint nodeSize) {
 // 
 //============================
 
+
+struct UnkNode1Data {
+    ushort unk1; // a count
+    ushort unk2;
+    ushort unk3;
+    ushort unk4;
+    ushort unk5;
+    ushort unk6;
+
+    struct UnkNode1SubData {
+        uint idx;
+        byte unk[8];
+    };
+    UnkNode1SubData unk1Data[unk1];
+};
+
+//============================
+
 struct Node {
     uint64 magicTag<hidden=true>;
     enum <uint32> {
-            Terrain = 262400,
-            Geometry = 262401,
-            Geometry2 = 262405,
-            Geometry3 = 262403,
-            PropsNode = 262656,
-            PropEntry = 327697
+            Terrain          = 262400, // parent for terrain
+                Terrain_T0      = 0,
+                Terrain_T1      = 1, // parent for T5
+                    Terrain_T5      = 5,
+                Terrain_T2      = 2,
+                Terrain_T3      = 3, // list of terrain materials to load
+                Terrain_T4      = 4,
+            Geometry         = 262401,
+            SubZoneGrid      = 262402,
+            Geometry3        = 262403,
+            UnkNode2         = 262404, // seen in shared lod data
+            Geometry2        = 262405,
+            PropsNode        = 262656,
+                PropEntry5       = 327680,
+                PropEntryParent  = 327681, // ? parent node within propchunk, looks like same children node types every time
+                  PropEntryChild_0034  = 34,
+                  PropEntryChild_0203  = 203,
+                  PropEntryChild_0304  = 304, 
+                  PropEntryChild_0401  = 401, 
+                  PropEntryChild_0501  = 501, 
+                  PropEntryChild_0601  = 601, 
+                  PropEntryChild_0700  = 700, 
+                  PropEntryChild_0900  = 900, 
+                  PropEntryChild_0800  = 800, 
+                  PropEntryChild_1000  = 1000,
+                  PropEntryChild_1200  = 1200,
+                  PropEntryChild_1300  = 1300,
+                  PropEntryChild_1400  = 1400,
+                PropEntry6       = 327686,
+                PropEntry8       = 327688,
+                PropEntry4       = 327693,
+                PropEntry        = 327697,
+                PropEntry3       = 327700,
+                PropEntry7       = 327703,
+                PropEntry2       = 327704,
+            UnkNode1         = 262659, // similiar to MeshInstance
+            PropEncNameReg   = 262660,
+            VegationChunk    = 262661,
+            OverlayChunk     = 262662,
+            SectorsChunk     = 262663,
+                SectorsEntry    = 327699,
+            WaterObjectChunk = 262664,
+            VegationChunk2   = 262665,
+            MeshInstance     = 262672
+            
         } nodeType;
         uint32 len;
 
@@ -217,9 +297,12 @@ struct Node {
         PropNodeEntry entry;
         byte leftData[len - sizeof(entry)];
     }
-    else if (nodeType == 262672) {
+    else if (nodeType == MeshInstance) {
         MeshInstanceBlock data;
         byte leftData[len - sizeof(data)];
+    }
+    else if (nodeType == UnkNode1) {
+        UnkNode1Data data;
     }
     else {
         byte data[len];
@@ -231,7 +314,7 @@ while( FTell() < FileSize() ) {
 }
 
 // display formating
-string Vec3Display(vec3 vec)
+string Vec3Display(vec3 &vec)
 {
     string s;   
     SPrintf( s, "%f, %f, %f", vec.x, vec.y, vec.z );
