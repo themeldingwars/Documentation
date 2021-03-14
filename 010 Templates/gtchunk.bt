@@ -1,15 +1,15 @@
 //--------------------------------------
 // 010 Editor Template
 // File: .gtchunk
-// Author: freakbyte, FallenAvatar, Arkii
+// Author: freakbyte, FallenAvatar, Arkii, Xsear
 //--------------------------------------
 
 local uint64 NODE_TAG_MAGIC = 1363845299501208301;
 // 3977403373
 // 1413563424
 
-local uint32 DATA1_MAGIC = 1096040772;
-local uint32 DATA2_MAGIC = 844382532;
+local uint32 DATA1_MAGIC = 1096040772; // "DATA", Compressed with zlib/Deflate
+local uint32 DATA2_MAGIC = 844382532; // "DAT2", Compressed with LZMA
 
 local uint64 check64 = 0;
 local uint32 check32 = 0;
@@ -40,20 +40,18 @@ struct NODE {
     {
         uint lodIdx;
         uint numSubChunks <read=ReadNumSubChunks>;
-        FSkip(-4);
-        float someFloat <read=SomeSubChunkFloat>;
-        uint unk1;
-        uint compressedSize;
-        uint uncompressedSize;
+        uint dataOffset; // bytes after root node until we find this data
+        uint compressedSize; // size of the data including type and compression headers
+        uint uncompressedSize; // size of the decompressed payload
 
         end = FTell() + (len - 20);
     }
     else if (nodeType == SubChunk)
     {
-        uint unk1;
-        uint compressedSize;
-        uint uncompressedSize;
-        vec3 boundsMin <read=Vec3Display>; // names a guess for these
+        uint dataOffset; // bytes after root node until we find this data
+        uint compressedSize; // size of data including type and compression headers
+        uint uncompressedSize; // size of the decompressed payload
+        vec3 boundsMin; // names a guess for these
         vec3 boundsMax;
 
         end = FTell() + (len - 36);
@@ -67,14 +65,7 @@ struct NODE {
         }
     }
 };
-struct DATA1 {
-    char magic[4];
-    check32 = ReadUInt();
-    while( check32 != DATA2_MAGIC ) {
-        byte data;
-        check32 = ReadUInt();
-    }
-};
+
 struct DATA {
     char magic[4];
     check32 = ReadUInt();
@@ -100,15 +91,6 @@ string ReadNumSubChunks(uint numSubChunks)
     local string count;
     SPrintf(count, "%i", numSubChunksCount);
     return count;
-}
-
-string SomeSubChunkFloat(uint numSubChunks)
-{
-    local uint num = 1 << numSubChunks;
-    local float thing = 512.0f / (float)num;
-    local string floatThing;
-    SPrintf(floatThing, "%f", thing);
-    return floatThing;
 }
 
 string Vec3Display(vec3 vec)
