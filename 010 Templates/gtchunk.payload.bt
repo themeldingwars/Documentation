@@ -116,7 +116,7 @@ struct PropsDataChunk(uint nodeSize) {
     }
 };
 
-struct PropNodeEntry {
+struct PropNodeEntry_LightData {
     byte header[64];
     uint unk1;
     float unk2[6];
@@ -173,7 +173,7 @@ struct TerrainChunk_type4(uint nodeSize) {
     vec3 boundsMax <read=Vec3Display>;
     uint unk9; // Number of vertices?
     byte unk10[16]; // Needs to be parsed
-    uint unk11; // (Triangles/unk15 * 3)
+    uint unk11; // (unk15 * 3)
     ushort unk12;
     uint unk13;
     
@@ -232,43 +232,43 @@ struct UnkNode1Data {
 struct Node {
     uint64 magicTag<hidden=true>;
     enum <uint32> {
-            Terrain          = 262400, // parent for terrain
-                Terrain_T0      = 0,
-                Terrain_T1      = 1, // parent for T5
-                    Terrain_T5      = 5,
-                Terrain_T2      = 2,
-                Terrain_T3      = 3, // list of terrain materials to load
-                Terrain_T4      = 4,
+            Terrain          = 262400, // parent, children are "terrain chunk layer"
+                Terrain_T0              = 0,
+                TerrainChunk_Materials  = 1, // parent, children are "terrain chunk material layer"
+                    TerrainChunk_MaterialLayer  = 5,
+                Terrain_T2              = 2, // might be blend weight layer
+                Terrain_T3              = 3, // list of terrain materials to load
+                Terrain_T4              = 4,
             Geometry         = 262401,
             SubZoneGrid      = 262402,
             Geometry3        = 262403,
-            UnkNode2         = 262404, // seen in shared lod data
+            PropEncNameReg2  = 262404, // seen in shared lod data,  "chunk prop encounter name registry"
             Geometry2        = 262405,
-            PropsNode        = 262656,
-                PropEntry5       = 327680,
-                PropEntryParent  = 327681, // ? parent node within propchunk, looks like same children node types every time
-                  PropEntryChild_0034  = 34,
-                  PropEntryChild_0203  = 203,
-                  PropEntryChild_0304  = 304, 
-                  PropEntryChild_0401  = 401, 
-                  PropEntryChild_0501  = 501, 
-                  PropEntryChild_0601  = 601, 
-                  PropEntryChild_0700  = 700, 
-                  PropEntryChild_0900  = 900, 
-                  PropEntryChild_0800  = 800, 
-                  PropEntryChild_1000  = 1000,
-                  PropEntryChild_1200  = 1200,
-                  PropEntryChild_1300  = 1300,
-                  PropEntryChild_1400  = 1400,
-                PropEntry6       = 327686,
-                PropEntry8       = 327688,
-                PropEntry4       = 327693,
-                PropEntry        = 327697,
-                PropEntry3       = 327700,
-                PropEntry7       = 327703,
-                PropEntry2       = 327704,
+            PropsNode        = 262656, // parent, children are "prop type layer"
+                PropType_Doodad           = 327680, // same id as zone files, probably same parsing then
+                PropType_EnvironmentData  = 327681, // environment prop data, these ids are also in the zone files
+                    DefaultEnvironmentLayer_0034  = 34,
+                    DefaultEnvironmentLayer_0203  = 203,
+                    DefaultEnvironmentLayer_0304  = 304, 
+                    DefaultEnvironmentLayer_0401  = 401, 
+                    DefaultEnvironmentLayer_0501  = 501, 
+                    DefaultEnvironmentLayer_0601  = 601, 
+                    DefaultEnvironmentLayer_0700  = 700, 
+                    DefaultEnvironmentLayer_0900  = 900, 
+                    DefaultEnvironmentLayer_0800  = 800, 
+                    DefaultEnvironmentLayer_1000  = 1000,
+                    DefaultEnvironmentLayer_1200  = 1200,
+                    DefaultEnvironmentLayer_1300  = 1300,
+                    DefaultEnvironmentLayer_1400  = 1400,
+                PropType_ProbeData        = 327686,
+                PropType_DecalInstances1  = 327688,
+                PropType_ParticleData     = 327693, // Bit unsure, seems like it should have children
+                PropType_LightData        = 327697,
+                PropType_AudioVolume      = 327700,
+                PropType_Monster          = 327703,
+                PropType_DecalInstances2  = 327704,
             UnkNode1         = 262659, // similiar to MeshInstance
-            PropEncNameReg   = 262660,
+            PropEncNameReg   = 262660, // "chunk prop encounter name registry"
             VegationChunk    = 262661,
             OverlayChunk     = 262662,
             SectorsChunk     = 262663,
@@ -293,8 +293,8 @@ struct Node {
     else if (nodeType == PropsNode) {
         PropsDataChunk data(startPos + len);
     }
-    else if (nodeType == PropEntry) {
-        PropNodeEntry entry;
+    else if (nodeType == PropType_LightData) {
+        PropNodeEntry_LightData entry;
         byte leftData[len - sizeof(entry)];
     }
     else if (nodeType == MeshInstance) {
