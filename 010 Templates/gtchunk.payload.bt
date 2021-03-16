@@ -160,33 +160,47 @@ struct TerrainChunk_type3 {
 };
 
 struct TerrainChunk_type4(uint nodeSize) {
-    uint count;
+    uint nodeCount;
+    struct T4Node {
+        uint nodeIndex; // node index within a level
+        uint nodeLevel; // node.mLevel <= cTerrainMaxChunkNodeLevel
+        uint unk3; // flags?
+        vec3 matrix[3] <read=Vec3Display>;
+        float unk7;
+        vec3 boundsMin <read=Vec3Display>;
+        vec3 boundsMax <read=Vec3Display>;
+        uint unk9; // Number of vertices?
+        byte unk10[16]; // Needs to be parsed
+        uint unk11; // (unk15 * 3)
+        ushort unk12;
 
-    uint unk1;
-    uint unk2;
-    uint unk3;
-    float unk4[3];
-    float unk5[3];
-    float unk6[3];
-    float unk7;
-    vec3 boundsMin <read=Vec3Display>;
-    vec3 boundsMax <read=Vec3Display>;
-    uint unk9; // Number of vertices?
-    byte unk10[16]; // Needs to be parsed
-    uint unk11; // (unk15 * 3)
-    ushort unk12;
-    uint unk13;
+        uint unk13;
+        if (unk13 != 0xffffffff) { // when node level is not 0?
+            ushort unk14[unk13];
+        }
     
-    if (unk13 != 0xffffffff) { // unk2 is 0?
-        ushort unk14[unk13];
-    }
-
-    uint unk15; // Number of patch triangles?
-
-    byte unk16; // probably related?
-    uint materials[6];
+        uint unk15; // Number of patch triangles?
     
-    uint unk18_size; // client will attempt to allocate this number of bytes
+        byte haveMaterials;
+        if (haveMaterials > 0) {
+            uint materials[6]; // refmap?
+        }
+        
+        uint unk18_size; // client will attempt to allocate this number of bytes
+    };
+    
+    T4Node nodes[nodeCount] <optimize=false>;
+    
+    // :thinking:
+    //local int i;
+    //local uint dataSize;
+    //struct nodeData(uint dataSize) {
+    //    byte data[dataSize];
+    //};
+    //for ( i = 0; i < nodeCount; i++) {
+    //    dataSize = nodes[i].unk18_size;
+    //    nodeData dat(dataSize);
+    //}
 };
 
 struct TerrainChunk(uint nodeSize) {
@@ -288,10 +302,11 @@ struct Node {
     }
     else if (nodeType == Terrain) {
         TerrainChunk data(len);
-        //byte leftData[len - sizeof(data)];
+        byte leftData[len - sizeof(data)];
     }
     else if (nodeType == PropsNode) {
         PropsDataChunk data(startPos + len);
+        byte leftData[len - sizeof(data)];
     }
     else if (nodeType == PropType_LightData) {
         PropNodeEntry_LightData entry;
@@ -303,6 +318,7 @@ struct Node {
     }
     else if (nodeType == UnkNode1) {
         UnkNode1Data data;
+        byte leftData[len - sizeof(data)];
     }
     else {
         byte data[len];
