@@ -111,8 +111,9 @@ struct GeometryData(uint nodeSize) {
 //============================
 
 struct PropsDataChunk(uint nodeSize) {
-    while( FTell() < nodeSize ) {
-        Node subNode;
+    local uint endOffset = FTell() + nodeSize;
+    while( FTell() < endOffset ) {
+        Node subNode<read=NodeDisplay>;
     }
 };
 
@@ -165,60 +166,62 @@ struct TerrainChunk_type4(uint nodeSize) {
         uint nodeIndex; // node index within a level
         uint nodeLevel; // node.mLevel <= cTerrainMaxChunkNodeLevel
         uint unk3; // flags?
+
         vec3 matrix[3] <read=Vec3Display>;
         float unk7;
+
         vec3 boundsMin <read=Vec3Display>;
         vec3 boundsMax <read=Vec3Display>;
-        uint unk9; // Number of vertices?
-        byte unk10[16]; // Needs to be parsed
-        uint unk11; // (unk15 * 3)
-        ushort unk12;
 
-        uint unk13;
-        if (unk13 != 0xffffffff) { // when node level is not 0?
-            ushort unk14[unk13];
-        }
+        uint unk9; // Number of vertices?
+        if (unk9 > 0) {
+            byte unk10[16]; // ?
+
+            uint unk11; // (unk15 * 3)
+            ushort unk12;
     
-        uint unk15; // Number of patch triangles?
-    
-        byte haveMaterials;
-        if (haveMaterials > 0) {
-            uint materials[6]; // refmap?
-        }
+            uint unk14_count;
+            if (unk14_count != 0xffffffff) { // when node level is not 0?
+                ushort unk14[unk14_count];
+            }
         
-        uint unk18_size; // client will attempt to allocate this number of bytes
+            uint unk15; // Number of patch triangles?
+        }
+
+        byte haveMoreData;
+        if (haveMoreData > 0) {
+            uint materials[6]; // refmap?
+            uint unk18_size; // client will attempt to allocate this number of bytes
+        }
     };
+    T4Node nodes[nodeCount] <read=T4NodeDisplay, optimize=false>;
     
-    T4Node nodes[nodeCount] <optimize=false>;
-    
-    // :thinking:
-    //local int i;
-    //local uint dataSize;
-    //struct nodeData(uint dataSize) {
-    //    byte data[dataSize];
-    //};
-    //for ( i = 0; i < nodeCount; i++) {
-    //    dataSize = nodes[i].unk18_size;
-    //    nodeData dat(dataSize);
-    //}
+    // this consumes all the bytes, but the divied up sections dont quite seem right when the count isn't 1
+    struct T4NodeData_1(uint unk9, uint unk11) {
+        byte data1[ 8 * (2 * unk9) ];
+        byte data2[ 6 * (unk9) ];
+        byte data3[ (unk11 - 1) ];
+        byte data4[ (unk11 - 1) ];
+    };
+    struct T4NodeData_2(uint unk18_size) {
+        byte data5[ unk18_size ]; 
+    };
+    local uint i;
+    for (i = 0; i < nodeCount; i++) {
+        if (nodes[i].unk9 > 0) {
+            T4NodeData_1 t4nd1(nodes[i].unk9, nodes[i].unk11) <optimize=false>;
+        }
+
+        if (exists(nodes[i].unk18_size)) {
+            T4NodeData_2 t4nd2(nodes[i].unk18_size) <optimize=false>;
+        }
+    }
 };
 
 struct TerrainChunk(uint nodeSize) {
-    while( FTell() < nodeSize ) {
-        NodeHeader header;
-        if (header.nodeType == 4) {
-            TerrainChunk_type4 data(header.len);
-            byte dataLeft[header.len - sizeof(data)];
-        }
-        else if (header.nodeType == 3) {
-            TerrainChunk_type3 data;
-        }
-        else if (header.nodeType == 0) {
-            TerrainChunk_type0 data;
-        }
-        else {
-            byte data[header.len];
-        }
+    local uint endOffset = FTell() + nodeSize;
+    while( FTell() < endOffset ) {
+        Node subNode<read=NodeDisplay>;
     }
 };
 
@@ -227,7 +230,7 @@ struct TerrainChunk(uint nodeSize) {
 
 
 struct UnkNode1Data {
-    ushort unk1; // a count
+    ushort unk1; // a count?
     ushort unk2;
     ushort unk3;
     ushort unk4;
@@ -247,12 +250,12 @@ struct Node {
     uint64 magicTag<hidden=true>;
     enum <uint32> {
             Terrain          = 262400, // parent, children are "terrain chunk layer"
-                Terrain_T0              = 0,
+                Terrain_T0              = 0, // meta, init?
                 TerrainChunk_Materials  = 1, // parent, children are "terrain chunk material layer"
                     TerrainChunk_MaterialLayer  = 5,
                 Terrain_T2              = 2, // might be blend weight layer
                 Terrain_T3              = 3, // list of terrain materials to load
-                Terrain_T4              = 4,
+                Terrain_T4              = 4, // shape data?
             Geometry         = 262401,
             SubZoneGrid      = 262402,
             Geometry3        = 262403,
@@ -301,24 +304,41 @@ struct Node {
         byte geoLeftData[len - sizeof(data)];
     }
     else if (nodeType == Terrain) {
-        TerrainChunk data(len);
-        byte leftData[len - sizeof(data)];
+        TerrainChunk data(len) <optimize=false>;
     }
+    else if (nodeType == Terrain_T4) {
+        TerrainChunk_type4 data(len)<optimize=false>;
+    }
+    else if (nodeType == Terrain_T3) {
+        TerrainChunk_type3 data<optimize=false>;
+    }
+    else if (nodeType == Terrain_T0) {
+        TerrainChunk_type0 data<optimize=false>;
+    }
+
     else if (nodeType == PropsNode) {
-        PropsDataChunk data(startPos + len);
-        byte leftData[len - sizeof(data)];
+        PropsDataChunk data(len);
     }
     else if (nodeType == PropType_LightData) {
-        PropNodeEntry_LightData entry;
-        byte leftData[len - sizeof(entry)];
+        PropNodeEntry_LightData data;
+        local uint remaining = len - sizeof(data);
+        if (remaining > 0) {
+            byte leftData[remaining];
+        }
     }
     else if (nodeType == MeshInstance) {
         MeshInstanceBlock data;
-        byte leftData[len - sizeof(data)];
+        local uint remaining = len - sizeof(data);
+        if (remaining > 0) {
+            byte leftData[remaining];
+        }
     }
     else if (nodeType == UnkNode1) {
         UnkNode1Data data;
-        byte leftData[len - sizeof(data)];
+        local uint remaining = len - sizeof(data);
+        if (remaining > 0) {
+            byte leftData[remaining];
+        }
     }
     else {
         byte data[len];
@@ -326,7 +346,7 @@ struct Node {
 };
 
 while( FTell() < FileSize() ) {
-    Node node ;
+    Node node<read=NodeDisplay>;
 }
 
 // display formating
@@ -334,5 +354,19 @@ string Vec3Display(vec3 &vec)
 {
     string s;   
     SPrintf( s, "%f, %f, %f", vec.x, vec.y, vec.z );
+    return s;
+}
+
+string NodeDisplay(Node &node)
+{
+    string s;   
+    SPrintf( s, "%s", EnumToString(node.nodeType));
+    return s;
+}
+
+string T4NodeDisplay(T4Node &node)
+{
+    string s;   
+    SPrintf( s, "Index: %i, Level: %i", node.nodeIndex, node.nodeLevel);
     return s;
 }
