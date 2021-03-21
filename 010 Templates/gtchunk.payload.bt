@@ -198,13 +198,13 @@ struct TerrainChunk_type4(uint nodeSize) {
     
     // this consumes all the bytes, but the divied up sections dont quite seem right when the count isn't 1
     struct T4NodeData_1(uint unk9, uint unk11) {
-        byte data1[ 8 * (2 * unk9) ];
-        byte data2[ 6 * (unk9) ];
+        byte sculpt_data[ 8 * (2 * unk9) ];
+        byte lighting_data[ 6 * (unk9) ];
         byte data3[ (unk11 - 1) ];
         byte data4[ (unk11 - 1) ];
     };
     struct T4NodeData_2(uint unk18_size) {
-        byte data5[ unk18_size ]; 
+        byte texturing_data[ unk18_size ]; 
     };
     local uint i;
     for (i = 0; i < nodeCount; i++) {
