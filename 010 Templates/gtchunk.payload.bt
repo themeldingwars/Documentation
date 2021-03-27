@@ -128,7 +128,7 @@ struct PropNodeEntry_LightData {
 //============================
 
 struct MeshInstanceBlock {
-ushort count;
+    ushort count;
     ushort unk1;
     uint unk2;
     uint unk3;
@@ -144,6 +144,51 @@ ushort count;
 
     uint unk10;
 };
+
+
+struct MeshInstance2Block {
+    ushort count_entries; // Probably tied to chunk sections, eg high lod sub chunks have fewer entries per instance
+    ushort unk1; // "3"
+    uint unk2; // "8"
+    uint unk3; // "64"
+
+    struct MeshInstanceEntry {
+        uint idx; // chunk node index
+        
+        uint count1;
+        if (count1 > 0) {
+            vec3 a<read=Vec3Display>;
+            vec3 b<read=Vec3Display>;
+    
+            /*
+            ushort nodeOrLeafCount; // "nodeCnt" or "leafCnt"
+            byte maybeUnk;
+            if (nodeOrLeafCount > 0) {
+                uint materialId; // only 3 bytes?
+                byte nodeOrLeafCount2;
+                uint textureId;
+                float unkMaybeFloat[12]; // xform?
+
+                uint maybeTypeHeader1;
+                uint maybeOptionalDataLength1;
+                uint maybeOptionalCount1;                
+                float unkFloatsAgain[16];
+                
+                uint maybeTypeHeader2;
+                uint maybeOptionalDataLength2;
+                byte optionalData2[maybeOptionalDataLength2];                
+
+            }
+            */
+        }
+        
+        uint count2;
+   
+    };
+    MeshInstanceEntry entries[count_entries]<optimize=false>;
+};
+
+
 
 // Terrain Chunk 
 //============================
@@ -225,42 +270,47 @@ struct TerrainChunk(uint nodeSize) {
     }
 };
 
+struct TerrainChunk_QuadTreeData(uint nodeSize) {
+    byte unk[8];
+    local uint endOffset = FTell() + nodeSize - 8;
+    while( FTell() < endOffset ) {
+        Node subNode<read=NodeDisplay>;
+    }
+};
+
 // 
 //============================
 
 
-struct UnkNode1Data {
-    ushort unk1; // a count?
-    ushort unk2;
-    ushort unk3;
-    ushort unk4;
-    ushort unk5;
-    ushort unk6;
-
-    struct UnkNode1SubData {
-        uint idx;
-        byte unk[8];
-    };
-    UnkNode1SubData unk1Data[unk1];
-};
 
 //============================
 
 struct Node {
     uint64 magicTag<hidden=true>;
     enum <uint32> {
-            Terrain          = 262400, // parent, children are "terrain chunk layer"
-                Terrain_T0              = 0, // meta, init?
-                TerrainChunk_Materials  = 1, // parent, children are "terrain chunk material layer"
-                    TerrainChunk_MaterialLayer  = 5,
-                Terrain_T2              = 2, // might be blend weight layer
-                Terrain_T3              = 3, // list of terrain materials to load
-                Terrain_T4              = 4, // shape data?
-            Geometry         = 262401,
+            Terrain = 262400, // parent, children are "terrain chunk layer"
+                TerrainChunk_T0 = 0, // meta, init?
+                TerrainChunk_Materials = 1, // parent, children are "terrain chunk material layer"
+                    TerrainChunk_MaterialLayer = 5,
+                TerrainChunk_QuadTree = 2, // has data and children, children are "terrain chunk quadtree layer"
+                    TerrainChunk_BlendWeight = 8, // children are "terrain blend weight layer"
+                        // BlendWeightLayer0 = 0, // id collision, need to handle separately
+                        // BlendWeightLayer2 = 2, // id collision, need to handle separately
+                    TerrainChunk_QuadTree_T9  = 9,
+                    TerrainChunk_QuadTree_T11 = 11,
+                    TerrainChunk_QuadTree_QQ1 = 1431655765,
+                    TerrainChunk_QuadTree_QQ2 = 1465909240,
+                    TerrainChunk_QuadTree_QQ3 = 2694881440,
+                    TerrainChunk_QuadTree_QQ4 = 2854889994,
+                    TerrainChunk_QuadTree_QQ5 = 4026523607,
+                    TerrainChunk_QuadTree_QQ6 = 4152328087,
+                TerrainChunk_T3 = 3, // list of terrain materials to load
+                TerrainChunk_T4 = 4, // shape data?
+            Geometry         = 262401, // main collision data?
             SubZoneGrid      = 262402,
-            Geometry3        = 262403,
+            Geometry3        = 262403, // spawn closet blocking volume?
             PropEncNameReg2  = 262404, // seen in shared lod data,  "chunk prop encounter name registry"
-            Geometry2        = 262405,
+            Geometry2        = 262405, // water area volume?
             PropsNode        = 262656, // parent, children are "prop type layer"
                 PropType_Doodad           = 327680, // same id as zone files, probably same parsing then
                 PropType_EnvironmentData  = 327681, // environment prop data, these ids are also in the zone files
@@ -284,7 +334,7 @@ struct Node {
                 PropType_AudioVolume      = 327700,
                 PropType_Monster          = 327703,
                 PropType_DecalInstances2  = 327704,
-            UnkNode1         = 262659, // similiar to MeshInstance
+            MeshInstance2    = 262659, // rocks/houses/containers/etc.
             PropEncNameReg   = 262660, // "chunk prop encounter name registry"
             VegationChunk    = 262661,
             OverlayChunk     = 262662,
@@ -306,16 +356,19 @@ struct Node {
     else if (nodeType == Terrain) {
         TerrainChunk data(len) <optimize=false>;
     }
-    else if (nodeType == Terrain_T4) {
-        TerrainChunk_type4 data(len)<optimize=false>;
-    }
-    else if (nodeType == Terrain_T3) {
-        TerrainChunk_type3 data<optimize=false>;
-    }
-    else if (nodeType == Terrain_T0) {
+    else if (nodeType == TerrainChunk_T0) {
         TerrainChunk_type0 data<optimize=false>;
     }
-
+    else if (nodeType == TerrainChunk_QuadTree) {
+        TerrainChunk_QuadTreeData data(len)<optimize=false>;
+    }
+    else if (nodeType == TerrainChunk_T3) {
+        TerrainChunk_type3 data<optimize=false>;
+    }
+    else if (nodeType == TerrainChunk_T4) {
+        TerrainChunk_type4 data(len)<optimize=false>;
+    }
+    
     else if (nodeType == PropsNode) {
         PropsDataChunk data(len);
     }
@@ -333,8 +386,8 @@ struct Node {
             byte leftData[remaining];
         }
     }
-    else if (nodeType == UnkNode1) {
-        UnkNode1Data data;
+    else if (nodeType == MeshInstance2) {
+        MeshInstance2Block data;
         local uint remaining = len - sizeof(data);
         if (remaining > 0) {
             byte leftData[remaining];
