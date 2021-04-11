@@ -28,6 +28,19 @@ struct vec3 {
     float z;
 };
 
+struct vec4 {
+    float x;
+    float y;
+    float z;
+    float w;
+};
+
+struct matrix4x4 {
+    vec4 a<read=Vec4Display, optimize=false>;
+    vec4 b<read=Vec4Display, optimize=false>;
+    vec4 c<read=Vec4Display, optimize=false>;
+    vec4 d<read=Vec4Display, optimize=false>;
+};
 
 // Geometry Node Data
 //============================
@@ -90,336 +103,58 @@ struct GeometryData(uint nodeSize) {
     uint numPhysicsMatIds;
     uint physicsMatIds[numPhysicsMatIds];
 
-    uint numVertBlocks;
-    GeoVertData vertBlocks[numVertBlocks] <optimize=false>;
+    struct GeoBlockStorage {
+        uint numVertBlocks;
+        GeoVertData vertBlocks[numVertBlocks] <optimize=false>;
 
-    uint numIndiceBlocks;
-    indiceBlock indiceBlocks[numIndiceBlocks] <optimize=false>;
+        uint numIndiceBlocks;
+        indiceBlock indiceBlocks[numIndiceBlocks] <optimize=false>;
 
-    uint numMatItems;
-    matsDataBlock matBlocks[numMatItems] <optimize=false>;
+        uint numMatItems;
+        matsDataBlock matBlocks[numMatItems] <optimize=false>;
 
-    uint numMoppBlocks;
-    moppDataBlock moppBlocks[numMoppBlocks] <optimize=false>;
+        uint numMoppBlocks;
+        moppDataBlock moppBlocks[numMoppBlocks] <optimize=false>;
+    } store <read=GeoStoreDisplay>;
 
-    local uint endPos = FTell(); 
-    local uint leftSize = nodeSize - (endPos - startPos);
-    byte havokData[leftSize];
-};
-
-// Props Dode Data
-//============================
-
-struct PropsDataChunk(uint nodeSize) {
-    local uint endOffset = FTell() + nodeSize;
-    while( FTell() < endOffset ) {
-        Node subNode<read=NodeDisplay>;
-    }
-};
-
-struct PropNodeEntry_LightData {
-    byte header[64];
-    uint unk1;
-    float unk2[6];
-    uint unk4;
-};
-
-// Mesh instances ?
-//============================
-
-struct MeshInstanceBlock {
-    ushort count;
-    ushort unk1;
-    uint unk2;
-    uint unk3;
-
-    uint unk4;
-    uint unk5;
-
-    float unkFloat[6];
-    uint64 unk6; // not on 262659 node id
-    uint unk7;
-    uint unk8;
-    byte unk9[1100]; // some mat stuff sub_19B1220
-
-    uint unk10;
-};
-
-
-struct MeshInstance2Block {
-    ushort count_entries; // Probably tied to chunk sections, eg high lod sub chunks have fewer entries per instance
-    ushort unk1; // "3"
-    uint unk2; // "8"
-    uint unk3; // "64"
-
-    struct MeshInstanceEntry {
-        uint idx; // chunk node index
+    struct HavokData(uint endPos) {
+        uint64 havocBeginMagicTag;
         
-        uint count1;
-        if (count1 > 0) {
-            vec3 a<read=Vec3Display>;
-            vec3 b<read=Vec3Display>;
-    
-            /*
-            ushort nodeOrLeafCount; // "nodeCnt" or "leafCnt"
-            byte maybeUnk;
-            if (nodeOrLeafCount > 0) {
-                uint materialId; // only 3 bytes?
-                byte nodeOrLeafCount2;
-                uint textureId;
-                float unkMaybeFloat[12]; // xform?
+        // type section
+        local uint havocBeginPos = FTell();
+        local string havocEndClassesTag = "
+@";
+        local uint havocClassesEndTagPos = FindFirst(havocEndClassesTag, true, false, 0, 0.0, 1, havocBeginPos);
+        byte havokClasses[havocClassesEndTagPos-havocBeginPos];
+        uint havokClassesEndTag;
+        // --
 
-                uint maybeTypeHeader1;
-                uint maybeOptionalDataLength1;
-                uint maybeOptionalCount1;                
-                float unkFloatsAgain[16];
+        // data section 
+        // try to parse some data based on common patterns
+        local uint havokNext04Pos = FindFirst("", true, false, 0, 0.0, 1, FTell()+1);
+        byte havokUnk1[havokNext04Pos-FTell()+1];
+    
+        vec4 havokVector1<read=Vec4Display>; // hkpListShape aabbHalfExtents?
+        vec4 havokVector2<read=Vec4Display>; // hkpListShape aabbCenter?
+    
+        local uint havokUnk2EndPos = FindFirst("", true, false, 0, 0.0, 1, FTell());
+
+        if ( havokUnk2EndPos < havokEndPos ) {
+ 
+            byte havokUnk2[havokUnk2EndPos - FTell()+3]; // the bytes before the last three are interesting, are they 2 bytes per combined shape?
+        
+            matrix4x4 havokMatrix1<optimize=false>; // ?
+            vec4 havokVector3<read=Vec4Display>; // often similiar to the previous two vectors
+            vec4 havokVector4<read=Vec4Display>; // but not always
+    
+            if (store.numVertBlocks > 0) { // Protect against errors when guess mockering
+                byte havokUnk_MaybeImportant[ FindFirst("", true, false, 0, 0.0, 1, FTell()) - FTell() ];
+                byte havokUnk_ShouldBe8_1;
+                byte data_group1[ FindFirst("", true, false, 0, 0.0, 1, FTell()+1) - FTell()];
+                byte havokUnk_ShouldBe8_2;
+                byte data_group2[ FindFirst("", true, false, 0, 0.0, 1, FTell()+1) - FTell()];
+                byte havokUnk_ShouldBe8_3;    
                 
-                uint maybeTypeHeader2;
-                uint maybeOptionalDataLength2;
-                byte optionalData2[maybeOptionalDataLength2];                
-
-            }
-            */
-        }
-        
-        uint count2;
-   
-    };
-    MeshInstanceEntry entries[count_entries]<optimize=false>;
-};
-
-
-
-// Terrain Chunk 
-//============================
-
-struct TerrainChunk_type0 {
-    uint unk1;
-    uint unk2;
-    uint unk3;
-    vec3 vec; 
-};
-
-struct TerrainChunk_type3 {
-    uint count;
-    uint data[count];
-};
-
-struct TerrainChunk_type4(uint nodeSize) {
-    uint nodeCount;
-    struct T4Node {
-        uint nodeIndex; // node index within a level
-        uint nodeLevel; // node.mLevel <= cTerrainMaxChunkNodeLevel
-        uint unk3; // flags?
-
-        vec3 matrix[3] <read=Vec3Display>;
-        float unk7;
-
-        vec3 boundsMin <read=Vec3Display>;
-        vec3 boundsMax <read=Vec3Display>;
-
-        uint unk9; // Number of vertices?
-        if (unk9 > 0) {
-            byte unk10[16]; // ?
-
-            uint unk11; // (unk15 * 3)
-            ushort unk12;
-    
-            uint unk14_count;
-            if (unk14_count != 0xffffffff) { // when node level is not 0?
-                ushort unk14[unk14_count];
-            }
-        
-            uint unk15; // Number of patch triangles?
-        }
-
-        byte haveMoreData;
-        if (haveMoreData > 0) {
-            uint materials[6]; // refmap?
-            uint unk18_size; // client will attempt to allocate this number of bytes
-        }
-    };
-    T4Node nodes[nodeCount] <read=T4NodeDisplay, optimize=false>;
-    
-    // this consumes all the bytes, but the divied up sections dont quite seem right when the count isn't 1
-    struct T4NodeData_1(uint unk9, uint unk11) {
-        byte sculpt_data[ 8 * (2 * unk9) ];
-        byte lighting_data[ 6 * (unk9) ];
-        byte data3[ (unk11 - 1) ];
-        byte data4[ (unk11 - 1) ];
-    };
-    struct T4NodeData_2(uint unk18_size) {
-        byte texturing_data[ unk18_size ]; 
-    };
-    local uint i;
-    for (i = 0; i < nodeCount; i++) {
-        if (nodes[i].unk9 > 0) {
-            T4NodeData_1 t4nd1(nodes[i].unk9, nodes[i].unk11) <optimize=false>;
-        }
-
-        if (exists(nodes[i].unk18_size)) {
-            T4NodeData_2 t4nd2(nodes[i].unk18_size) <optimize=false>;
-        }
-    }
-};
-
-struct TerrainChunk(uint nodeSize) {
-    local uint endOffset = FTell() + nodeSize;
-    while( FTell() < endOffset ) {
-        Node subNode<read=NodeDisplay>;
-    }
-};
-
-struct TerrainChunk_QuadTreeData(uint nodeSize) {
-    byte unk[8];
-    local uint endOffset = FTell() + nodeSize - 8;
-    while( FTell() < endOffset ) {
-        Node subNode<read=NodeDisplay>;
-    }
-};
-
-// 
-//============================
-
-
-
-//============================
-
-struct Node {
-    uint64 magicTag<hidden=true>;
-    enum <uint32> {
-            Terrain = 262400, // parent, children are "terrain chunk layer"
-                TerrainChunk_T0 = 0, // meta, init?
-                TerrainChunk_Materials = 1, // parent, children are "terrain chunk material layer"
-                    TerrainChunk_MaterialLayer = 5,
-                TerrainChunk_QuadTree = 2, // has data and children, children are "terrain chunk quadtree layer"
-                    TerrainChunk_BlendWeight = 8, // children are "terrain blend weight layer"
-                        // BlendWeightLayer0 = 0, // id collision, need to handle separately
-                        // BlendWeightLayer2 = 2, // id collision, need to handle separately
-                    TerrainChunk_QuadTree_T9  = 9,
-                    TerrainChunk_QuadTree_T11 = 11,
-                    TerrainChunk_QuadTree_QQ1 = 1431655765,
-                    TerrainChunk_QuadTree_QQ2 = 1465909240,
-                    TerrainChunk_QuadTree_QQ3 = 2694881440,
-                    TerrainChunk_QuadTree_QQ4 = 2854889994,
-                    TerrainChunk_QuadTree_QQ5 = 4026523607,
-                    TerrainChunk_QuadTree_QQ6 = 4152328087,
-                TerrainChunk_T3 = 3, // list of terrain materials to load
-                TerrainChunk_T4 = 4, // shape data?
-            Geometry         = 262401, // main collision data?
-            SubZoneGrid      = 262402,
-            Geometry3        = 262403, // spawn closet blocking volume?
-            PropEncNameReg2  = 262404, // seen in shared lod data,  "chunk prop encounter name registry"
-            Geometry2        = 262405, // water area volume?
-            PropsNode        = 262656, // parent, children are "prop type layer"
-                PropType_Doodad           = 327680, // same id as zone files, probably same parsing then
-                PropType_EnvironmentData  = 327681, // environment prop data, these ids are also in the zone files
-                    DefaultEnvironmentLayer_0034  = 34,
-                    DefaultEnvironmentLayer_0203  = 203,
-                    DefaultEnvironmentLayer_0304  = 304, 
-                    DefaultEnvironmentLayer_0401  = 401, 
-                    DefaultEnvironmentLayer_0501  = 501, 
-                    DefaultEnvironmentLayer_0601  = 601, 
-                    DefaultEnvironmentLayer_0700  = 700, 
-                    DefaultEnvironmentLayer_0900  = 900, 
-                    DefaultEnvironmentLayer_0800  = 800, 
-                    DefaultEnvironmentLayer_1000  = 1000,
-                    DefaultEnvironmentLayer_1200  = 1200,
-                    DefaultEnvironmentLayer_1300  = 1300,
-                    DefaultEnvironmentLayer_1400  = 1400,
-                PropType_ProbeData        = 327686,
-                PropType_DecalInstances1  = 327688,
-                PropType_ParticleData     = 327693, // Bit unsure, seems like it should have children
-                PropType_LightData        = 327697,
-                PropType_AudioVolume      = 327700,
-                PropType_Monster          = 327703,
-                PropType_DecalInstances2  = 327704,
-            MeshInstance2    = 262659, // rocks/houses/containers/etc.
-            PropEncNameReg   = 262660, // "chunk prop encounter name registry"
-            VegationChunk    = 262661,
-            OverlayChunk     = 262662,
-            SectorsChunk     = 262663,
-                SectorsEntry    = 327699,
-            WaterObjectChunk = 262664,
-            VegationChunk2   = 262665,
-            MeshInstance     = 262672
-            
-        } nodeType;
-        uint32 len;
-
-    local uint64 startPos = FTell();
-
-    if (nodeType == Geometry || nodeType == Geometry2 || nodeType == Geometry3) {
-        GeometryData data(len);
-        byte geoLeftData[len - sizeof(data)];
-    }
-    else if (nodeType == Terrain) {
-        TerrainChunk data(len) <optimize=false>;
-    }
-    else if (nodeType == TerrainChunk_T0) {
-        TerrainChunk_type0 data<optimize=false>;
-    }
-    else if (nodeType == TerrainChunk_QuadTree) {
-        TerrainChunk_QuadTreeData data(len)<optimize=false>;
-    }
-    else if (nodeType == TerrainChunk_T3) {
-        TerrainChunk_type3 data<optimize=false>;
-    }
-    else if (nodeType == TerrainChunk_T4) {
-        TerrainChunk_type4 data(len)<optimize=false>;
-    }
-    
-    else if (nodeType == PropsNode) {
-        PropsDataChunk data(len);
-    }
-    else if (nodeType == PropType_LightData) {
-        PropNodeEntry_LightData data;
-        local uint remaining = len - sizeof(data);
-        if (remaining > 0) {
-            byte leftData[remaining];
-        }
-    }
-    else if (nodeType == MeshInstance) {
-        MeshInstanceBlock data;
-        local uint remaining = len - sizeof(data);
-        if (remaining > 0) {
-            byte leftData[remaining];
-        }
-    }
-    else if (nodeType == MeshInstance2) {
-        MeshInstance2Block data;
-        local uint remaining = len - sizeof(data);
-        if (remaining > 0) {
-            byte leftData[remaining];
-        }
-    }
-    else {
-        byte data[len];
-    }
-};
-
-while( FTell() < FileSize() ) {
-    Node node<read=NodeDisplay>;
-}
-
-// display formating
-string Vec3Display(vec3 &vec)
-{
-    string s;   
-    SPrintf( s, "%f, %f, %f", vec.x, vec.y, vec.z );
-    return s;
-}
-
-string NodeDisplay(Node &node)
-{
-    string s;   
-    SPrintf( s, "%s", EnumToString(node.nodeType));
-    return s;
-}
-
-string T4NodeDisplay(T4Node &node)
-{
-    string s;   
-    SPrintf( s, "Index: %i, Level: %i", node.nodeIndex, node.nodeLevel);
-    return s;
-}
+                // wish we could search for sequence: 0x06 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+                // searching for sequence 2 6 0 which is not correct for some cases
+                local string havokUnk3SearchSequence1 = "
