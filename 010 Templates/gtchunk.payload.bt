@@ -287,54 +287,79 @@ struct MeshInstance2Block {
 
         uint count1;
         if (count1 > 0) {
-            // fits when count1 == 1
-            vec3 a<read=Vec3Display>;
-            vec3 b<read=Vec3Display>;
-            uint count2; // when not 0 there is more data that must be parsed
-            // --
-
-            struct count2Data {
-                uint textureIdRelated;  
-    
-                byte twelvezero[12]; // xform?
-                float tenfloats[10]; // --        
-                
-                ushort short1; // not sure if a count or a uint nodetype
-                ushort short2;
-                uint zero;
-                uint matrixCount; // ?
-                matrix4x4 matrix[matrixCount];
-                //vec4 unk9[4]<read=Vec4Display>;
             
-                
-                uint uint1_1; // same as short1?
-                uint uint2_1; // ?
-                byte data1_1[uint2_1];
-                
-                
-                uint uint1_2;
-                uint uint2_2;
-                byte data1_2[uint2_2];
-               
-                uint eh3;
-                byte data_eh[eh3];
-
-                byte data_ugh[82];
-                
-            };
-
-            if (count2 > 0) {
-                count2Data c2data[count2];
-            }
+            struct count1Data {
+                // fits when count1 == 1
+                vec3 a<read=Vec3Display>;
+                vec3 b<read=Vec3Display>;
+                uint count2; // when not 0 there is more data that must be parsed
+                // --
+    
+                struct count2Data {
+                    uint textureIdRelated;  
         
-            uint count_end; //if count2 is 0 these additional four bytes exist and were zero too
+                    byte twelvezero[12]; // xform?
+                    float tenfloats[10]; // --        
+                    
+                    uint uint1_0; // not sure if a count or a uint nodetype
+                    uint uint2_0;
+    
+                    uint matrixCount;
+                    matrix4x4 matrix[matrixCount]<optimize=false>;
+                
+                    
+                    uint uint1_1; // same as uint1_0?
+                    uint uint2_1; // ?
+                    byte data1_1[uint2_1];
+                    
+                    
+                    uint uint1_2;
+                    uint uint2_2;
+                    byte data1_2[uint2_2];
+                    uint wut;
+                    byte huh[2];                
+        
+    
+                    uint uint1_3;
+                    uint uint2_3;
+                    byte data1_3[uint2_3];
+    
+                    uint uint1_4;
+                    uint uint2_4;
+                    byte data1_4[uint2_4];
+                    
+                    uint uint1_5;
+                    uint uint2_5;
+                    byte data1_5[uint2_5];
+    
+    
+                    uint data_last;
+                    
+                };
+    
+                if (count2 > 0) {
+                    count2Data c2data[count2]<optimize=false>;
+                }
+            };
+            count1Data c1data[count1]<optimize=false>;
+            //uint count_end; //if count2 is 0 these additional four bytes exist and were zero too
+            
+  
         }
         else {
             // when count1 is 0 there is still 4 bytes left at the end
-            uint count_end;
+            //uint count_end;
+        }
+        uint count_end;
+        if (count_end > 0) {
+            struct countEndData {
+                float endtenfloats[10];
+                byte endunk[8];
+            };
+            countEndData cenddata[count_end]<optimize=false>;
         }
     };
-    //MeshInstanceEntry entries[count_entries]<optimize=false>;
+    MeshInstanceEntry entries[count_entries]<optimize=false>;
 };
 
 
