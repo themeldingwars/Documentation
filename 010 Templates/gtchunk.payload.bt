@@ -286,33 +286,35 @@ struct MeshInstance2Block {
         uint idx; // chunk node index
 
         uint count1;
-        if (count1 > 0) {
+        if (count1 > 0) { // groups?
             struct count1Data {
-                vec3 a<read=Vec3Display>;
-                vec3 b<read=Vec3Display>;
+                vec3 min<read=Vec3Display>;
+                vec3 max<read=Vec3Display>;
 
                 uint count2;
-                if (count2 > 0) {
+                if (count2 > 0) { // instances?
                     struct count2Data {
 
                         uint textureIdRelated; // this ones a bit confusing
             
                         // could easily be combined
                         byte twelvezero[12];
-                        float tenfloats[10];
+                        vec3 center<read=Vec3Display>; // ?
+                        float extrafloat; // ?
+                        vec3 min<read=Vec3Display>;
+                        vec3 max<read=Vec3Display>;
                         // --
                         
                         uint uint1_0; // first two bytes same as uint1_1 and uint1_2, maybe shorts 
                         uint uint2_0; // 0
         
-                        uint matrixCount;
-                        matrix4x4 matrix[matrixCount]<optimize=false>;
+                        uint transformCount;
+                        matrix4x4 transform[transformCount]<optimize=false>;
                     
                         
                         uint uint1_1; // same as uint1_2
                         uint uint2_1; // compressed data size?
                         byte data1_1[uint2_1];
-                        
                         
                         uint uint1_2; // same as uint1_1
                         uint uint2_2; // compressed data size?
@@ -322,7 +324,6 @@ struct MeshInstance2Block {
                         uint unknown_value;
                         byte maybe_flags[2];
                         // --
-            
         
                         uint uint1_3;
                         uint uint2_3; // compressed data size?
