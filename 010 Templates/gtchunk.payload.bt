@@ -295,39 +295,41 @@ struct MeshInstance2Block {
                 if (count2 > 0) { // instances?
                     struct count2Data {
 
-                        uint textureIdRelated; // this ones a bit confusing
-            
-                        // could easily be combined
-                        byte twelvezero[12];
+                        uint materialId : 24; // 3 lowest bytes, .tmlt
+                        uint errorIfZero: 8; // 4th byte must not be zero
+
+                        uint textureId1; // optional .r5tex
+                        uint textureId2; // optional .r5tex
+                        uint textureId3; // optional .r5tex
+
                         vec3 center<read=Vec3Display>; // ?
                         float extrafloat; // ?
                         vec3 min<read=Vec3Display>;
                         vec3 max<read=Vec3Display>;
-                        // --
+                        
                         
                         uint uint1_0; // first two bytes same as uint1_1 and uint1_2, maybe shorts 
                         uint uint2_0; // 0
         
                         uint transformCount;
                         matrix4x4 transform[transformCount]<optimize=false>;
-                    
                         
-                        uint uint1_1; // same as uint1_2
+                        uint uint1_1; // same as uint1_2 // must not be 0, or assert((int)Lz77::Decompress(in, compSize, out, num*size) == num*size) failed,  assert(repTblNum == num/3) failed
                         uint uint2_1; // compressed data size?
                         byte data1_1[uint2_1];
                         
                         uint uint1_2; // same as uint1_1
                         uint uint2_2; // compressed data size?
-                        byte data1_2[uint2_2];
-                        
+                        byte data1_2[uint2_2]; // first byte: assert(Lz77::Decompress(cpuInfo.xformIdx, cpuInfo.xformIdxSize, xformIdxs, nv*sizeof(int)) == (int)(nv*sizeof(int))) failed, assert(xformIdxs[i] < cpuInfo.numXforms) failed
+
                         // imagine this will break at some point
                         uint unknown_value;
                         byte maybe_flags[2];
                         // --
         
-                        uint uint1_3;
+                        uint uint1_3; 
                         uint uint2_3; // compressed data size?
-                        byte data1_3[uint2_3];
+                        byte data1_3[uint2_3]; // since this was 0 in a case with textureId, presumably texture related?
         
                         uint uint1_4;
                         uint uint2_4; // compressed data size?
@@ -338,7 +340,7 @@ struct MeshInstance2Block {
                         byte data1_5[uint2_5];
         
         
-                        uint data_last; // 0 (or yet another count?)
+                        uint data_last; // ?
                         
                     };
                     count2Data c2data[count2]<optimize=false>;
@@ -664,15 +666,17 @@ struct Node {
         }
     }
     else if (nodeType == VegationChunk2) {
-        VegationChunk2Data data;
-        local uint remaining = len - sizeof(data);
+        //VegationChunk2Data data;
+        //local uint remaining = len - sizeof(data);
+        local uint remaining = len;
         if (remaining > 0) {
             byte leftData[remaining];
         }
     }
     else if (nodeType == WaterObjectChunk) {
-        WaterObjectChunkData data;
-        local uint remaining = len - sizeof(data);
+        //WaterObjectChunkData data;
+        //local uint remaining = len - sizeof(data);
+        local uint remaining = len;
         if (remaining > 0) {
             byte leftData[remaining];
         }
