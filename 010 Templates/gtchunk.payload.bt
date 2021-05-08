@@ -42,6 +42,13 @@ struct matrix4x4 {
     vec4 d<read=Vec4Display, optimize=false>;
 };
 
+struct matrix3x4 {
+    vec3 a<read=Vec3Display, optimize=false>;
+    vec3 b<read=Vec3Display, optimize=false>;
+    vec3 c<read=Vec3Display, optimize=false>;
+    vec3 d<read=Vec3Display, optimize=false>;
+};
+
 // Geometry Node Data
 //============================
 
@@ -237,10 +244,7 @@ struct PropNodeEntry_AudioVolume {
 
 struct PropNodeEntry_DecalInstances2 {
     uint decal_id;
-    vec3 a<read=Vec3Display>;
-    vec3 b<read=Vec3Display>;
-    vec3 c<read=Vec3Display>;
-    vec3 d<read=Vec3Display>; // best candidate for position!
+    matrix3x4 transform;
     byte last[3];
 };
 
@@ -257,111 +261,106 @@ struct PropNodeEntry_ParticleData {
 // Mesh instances ?
 //============================
 
-struct MeshInstanceBlock {
-    ushort count;
-    ushort unk1;
-    uint unk2;
-    uint unk3;
+struct MeshInstanceBlock(uint32 type) {
+    ushort count_entries; // Tied to chunk sections, eg high lod sub chunks have fewer entries per instance
+    
+    ushort const1; // "3"
+    uint const2;   // "8"
+    uint const3;   // "64"
 
-    uint unk4;
-    uint unk5;
-
-    float unkFloat[6];
-    uint64 unk6; // not on 262659 node id
-    uint unk7;
-    uint unk8;
-    byte unk9[1100]; // some mat stuff sub_19B1220
-
-    uint unk10;
-};
-
-
-struct MeshInstance2Block {
-    ushort count_entries; // Probably tied to chunk sections, eg high lod sub chunks have fewer entries per instance
-    ushort unk1; // "3"
-    uint unk2; // "8"
-    uint unk3; // "64"
-
-    struct MeshInstanceEntry {
+    struct MeshInstanceEntry(uint32 type) {
         uint idx; // chunk node index
-
         uint count1;
-        if (count1 > 0) { // groups?
-            struct count1Data {
+        if (count1 > 0) {
+            struct count1Data(uint32 type) {
                 vec3 min<read=Vec3Display>;
                 vec3 max<read=Vec3Display>;
+                
+                if (type == MeshInstance) {
+                    uint64 unkLong<format=hex>; // ?
+                }
 
-                uint count2;
-                if (count2 > 0) { // instances?
-                    struct count2Data {
-
+                uint count_inner;
+                if (count_inner > 0) {
+                    struct innerData(uint32 type) {
                         uint materialId : 24; // 3 lowest bytes, .tmlt
                         uint errorIfZero: 8; // 4th byte must not be zero
 
                         uint textureId1; // optional .r5tex
                         uint textureId2; // optional .r5tex
                         uint textureId3; // optional .r5tex
-
-                        vec3 center<read=Vec3Display>; // ?
-                        float extrafloat; // ?
+                        
+                        if (type == MeshInstance2) {
+                            vec3 center<read=Vec3Display>; // ?
+                            float extrafloat; // ?
+                        }
+        
                         vec3 min<read=Vec3Display>;
                         vec3 max<read=Vec3Display>;
                         
-                        
-                        uint uint1_0; // first two bytes same as uint1_1 and uint1_2, maybe shorts 
-                        uint uint2_0; // 0
-        
+                        ushort unk1_1;
+                        ushort unk1_2;
+                        uint unk2; // 0, room for compressed data?
+       
                         uint transformCount;
                         matrix4x4 transform[transformCount]<optimize=false>;
                         
-                        uint uint1_1; // same as uint1_2 // must not be 0, or assert((int)Lz77::Decompress(in, compSize, out, num*size) == num*size) failed,  assert(repTblNum == num/3) failed
-                        uint uint2_1; // compressed data size?
-                        byte data1_1[uint2_1];
+                        ushort unk3_1; 
+                        ushort unk3_2;
+                        uint compressedDataLength1;
+                        byte lz77_data1[compressedDataLength1];
                         
-                        uint uint1_2; // same as uint1_1
-                        uint uint2_2; // compressed data size?
-                        byte data1_2[uint2_2]; // first byte: assert(Lz77::Decompress(cpuInfo.xformIdx, cpuInfo.xformIdxSize, xformIdxs, nv*sizeof(int)) == (int)(nv*sizeof(int))) failed, assert(xformIdxs[i] < cpuInfo.numXforms) failed
+                        ushort unk4_1;
+                        ushort unk4_2;
+                        uint compressedDataLength2;
+                        byte lz77_data2[compressedDataLength2];
 
                         // imagine this will break at some point
-                        uint unknown_value;
-                        byte maybe_flags[2];
+                        uint unk5;
+                        byte unk6[2];
                         // --
         
-                        uint uint1_3; 
-                        uint uint2_3; // compressed data size?
-                        byte data1_3[uint2_3]; // since this was 0 in a case with textureId, presumably texture related?
+                        ushort unk7_1;
+                        ushort unk7_2;
+                        uint compressedDataLength3;
+                        byte lz77_data3[compressedDataLength3];
         
-                        uint uint1_4;
-                        uint uint2_4; // compressed data size?
-                        byte data1_4[uint2_4];
+                        ushort unk8_1;
+                        ushort unk8_2;
+                        uint compressedDataLength4;
+                        byte lz77_data4[compressedDataLength4];
                         
-                        uint uint1_5;
-                        uint uint2_5; // compressed data size?
-                        byte data1_5[uint2_5];
+                        ushort unk9_1;
+                        ushort unk9_2;
+                        uint compressedDataLength5;
+                        byte lz77_data5[compressedDataLength5];
         
-        
-                        uint data_last; // ?
-                        
+                        uint unk10; // ?
                     };
-                    count2Data c2data[count2]<optimize=false>;
+                    innerData inner_data(type)[count_inner]<optimize=false>;
                 }
             };
-            count1Data c1data[count1]<optimize=false>;
+            count1Data c1data(type)[count1]<optimize=false>;
         }
 
-        uint count_end;
-        if (count_end > 0) {
-            struct countEndData {
+        uint count2;
+        if (count2 > 0) {
+            struct count2Data(uint32 type) {
                 float endtenfloats[10];
-                byte endunk[8]; // looking like a bitfield
+
+                if (type == MeshInstance) {
+                    byte endunk[16];
+                }
+                else if (type == MeshInstance2) {
+                    byte endunk[8];
+                }
             };
-            countEndData cenddata[count_end]<optimize=false>;
+            count2Data c2data(type)[count2]<optimize=false>;
         }
 
     };
-    MeshInstanceEntry entries[count_entries]<optimize=false>;
+    MeshInstanceEntry entries(type)[count_entries]<optimize=false>;
 };
-
 
 
 // Terrain Chunk 
@@ -602,7 +601,10 @@ struct Node {
 
     if (nodeType == Geometry || nodeType == Geometry2 || nodeType == Geometry3) {
         GeometryData data(len);
-        byte geoLeftData[len - sizeof(data)];
+        local uint remaining = len - sizeof(data);
+        if (remaining > 0) {
+            byte leftData[remaining];
+        }
     }
     else if (nodeType == Terrain) {
         TerrainChunk data(len) <optimize=false>;
@@ -651,15 +653,9 @@ struct Node {
             byte leftData[remaining];
         }
     }
-    else if (nodeType == MeshInstance) {
-        MeshInstanceBlock data;
-        local uint remaining = len - sizeof(data);
-        if (remaining > 0) {
-            byte leftData[remaining];
-        }
-    }
-    else if (nodeType == MeshInstance2) {
-        MeshInstance2Block data;
+    
+    else if (nodeType == MeshInstance || nodeType == MeshInstance2) {
+        MeshInstanceBlock data(nodeType);
         local uint remaining = len - sizeof(data);
         if (remaining > 0) {
             byte leftData[remaining];
