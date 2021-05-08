@@ -458,10 +458,13 @@ struct VegationChunk2Data {
     vec3 a;
     uint unk1;
     uint unk2;
-    uint unk3;
-    vec4 b;
-    ushort unk4;
-    vec4 c;
+    struct unkVegData1 {
+        uint i;
+        float f;
+        
+    };
+    unkVegData1 unk3[unk1];
+    vec3 b[unk1];
 };
 
 
@@ -470,7 +473,7 @@ struct VegationChunk2Data {
 
 struct WaterObjectChunkData {
     
-    // eyeballed outline based on just 1 instance
+    // eyeballed outline based on just a few instances
 
     vec3 a<read=Vec3Display>; // three floats
     uint unk1;
@@ -481,7 +484,7 @@ struct WaterObjectChunkData {
         float f;
         uint i;
     };
-    unkdata4 unk4[5]; // five ?
+    unkdata4 unk4[unk3+1];
 
     float unk5;
     uint unk6; // typical id value, maybe type
@@ -500,20 +503,15 @@ struct WaterObjectChunkData {
     byte unk15[unk14*4];
 
     uint unk16;
-    uint unk17;
-    uint unk18;
-    uint unk19;
-    uint unk20;
-    uint unk21;
+    uint unk17[unk16];
 
-    byte unk22[5]; // just taking a guess, needed to offset by 1
-
-    uint unk23;
-    uint unk24;
-    float unk25[5]; // five ?
-    
-    byte unk26[ ( unk23 * unk24 ) * unk3  ]; // total guesswork calc
-
+    byte unk22; // bool?
+    if (unk22 == 0x01) {
+        uint unk23;
+        uint unk24;
+        float unk25[unk3+1];
+        byte unk26[ ( unk23 * unk24 ) * unk3  ]; // total guesswork calc
+    }
     vec4 unk27<read=Vec4Display>;
     vec4 unk28<read=Vec4Display>;
 };
@@ -670,9 +668,8 @@ struct Node {
         }
     }
     else if (nodeType == WaterObjectChunk) {
-        //WaterObjectChunkData data;
-        //local uint remaining = len - sizeof(data);
-        local uint remaining = len;
+        WaterObjectChunkData data;
+        local uint remaining = len - sizeof(data);
         if (remaining > 0) {
             byte leftData[remaining];
         }
