@@ -18,16 +18,23 @@ struct DIDX
         uint id;
         uint offset;
         uint length;
-    } entry[sectionLength / 12];
+    } entry[sectionLength / sizeof(ENTRY)];
+};
 
+struct DATA_Track(int size)
+{
+    byte data[size];
 };
 
 struct DATA
 {
     local int i;
-    for(i = 0; i < didx.entry.length; i++)
+    local int offset = 0;
+    for(i = 0; i < sizeof(didx.entry) / sizeof(ENTRY); i++)
     {
-        byte track[didx.entry[i].length];
+        FSkip(didx.entry[i].offset - offset); // Skip buffer/alignment region
+        DATA_Track track(didx.entry[i].length);
+        offset = didx.entry[i].length;
     }    
 };
 
@@ -196,67 +203,67 @@ struct HIRC
         switch(type)
         {
             case Settings:
-                HIRC_Settings entry<name="Settings">;;
+                HIRC_Settings entry<name="Settings">;
                 break;
             case Sound:
                 HIRC_Sound entry<name="Sound">;
                 break;
             case EventAction:
-                HIRC_EventAction entry<name="EventAction">;;
+                HIRC_EventAction entry<name="EventAction">;
                 break;
             case Event:
-                HIRC_Event entry<name="Event">;;
+                HIRC_Event entry<name="Event">;
                 break;
             case RandomOrSequenceContainer:
-                HIRC_RandomOrSequenceContainer entry<name="RandomOrSequenceContainer">;;
+                HIRC_RandomOrSequenceContainer entry<name="RandomOrSequenceContainer">;
                 break;
             case SwitchContainer:
-                HIRC_SwitchContainer entry<name="SwitchContainer">;;
+                HIRC_SwitchContainer entry<name="SwitchContainer">;
                 break;
             case ActorMixer:
-                HIRC_ActorMixer entry<name="ActorMixer">;;
+                HIRC_ActorMixer entry<name="ActorMixer">;
                 break;
             case AudioBus:
-                HIRC_AudioBus entry<name="AudioBus">;;
+                HIRC_AudioBus entry<name="AudioBus">;
                 break;
             case BlendContainer:
-                HIRC_BlendContainer entry<name="BlendContainer">;;
+                HIRC_BlendContainer entry<name="BlendContainer">;
                 break;
             case MusicSegment:
-                HIRC_MusicSegment entry<name="MusicSegment">;;
+                HIRC_MusicSegment entry<name="MusicSegment">;
                 break;
             case MusicTrack:
-                HIRC_MusicTrack entry<name="MusicTrack">;;
+                HIRC_MusicTrack entry<name="MusicTrack">;
                 break;
             case MusicSwitchContainer:
-                HIRC_MusicSwitchContainer entry<name="MusicSwitchContainer">;;
+                HIRC_MusicSwitchContainer entry<name="MusicSwitchContainer">;
                 break;
             case MusicPlaylistContainer:
-                HIRC_MusicPlaylistContainer entry<name="MusicPlaylistContainer">;;
+                HIRC_MusicPlaylistContainer entry<name="MusicPlaylistContainer">;
                 break;
             case Attenuation:
-                HIRC_Attenuation entry<name="Attenuation">;;
+                HIRC_Attenuation entry<name="Attenuation">;
                 break;
             case DialogueEvent:
-                HIRC_DialogueEvent entry<name="DialogueEvent">;;
+                HIRC_DialogueEvent entry<name="DialogueEvent">;
                 break;
             case MotionBus:
-                HIRC_MotionBus entry<name="MotionBus">;;
+                HIRC_MotionBus entry<name="MotionBus">;
                 break;
             case MotionFx:
-                HIRC_MotionFx entry<name="MotionFx">;;
+                HIRC_MotionFx entry<name="MotionFx">;
                 break;
             case Effect:
-                HIRC_Effect entry<name="Effect">;;
+                HIRC_Effect entry<name="Effect">;
                 break;
             case Unknown:
-                HIRC_Unknown entry<name="Unknown">;;
+                HIRC_Unknown entry<name="Unknown">;
                 break;
             case AuxiliaryBus:
                 HIRC_AuxiliaryBus entry<name="AuxiliaryBus">;
                 break;
             default:         
-                HIRC_UNK entry<name="UNKNOWN">;;
+                HIRC_UNK entry<name="UNKNOWN">;
                 break;
         } 
     }
@@ -298,7 +305,8 @@ while(!FEof())
             BKHD bkhd;
             break;
         case "DIDX":
-            DIDX didx;       
+            DIDX didx;
+            break;
         case "DATA":
             DATA data;
             break;
