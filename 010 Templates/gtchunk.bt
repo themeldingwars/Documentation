@@ -18,113 +18,99 @@ local uint32 rootEnd = 0;
 
 typedef float vec3[3] <read=Vec3Display>;
 
-struct NODE;
-struct NODE {
-    uint64 magicTag<hidden=true>;
-    enum <uint32> {
-        Root = 262144,
-        Lod = 262145,
-        SubChunk = 262146
-    } nodeType;
-    uint32 len;
-
-    local uint64 end = FTell() + len;
-
-    if (nodeType == Root)
-    {
-        uint version;
-        uint64 timestamp;
-        uint numLods;
-
-        end = FTell() + (len - 16);
-        rootEnd = len + 1;
-    }
-    else if (nodeType == Lod)
-    {
-        uint lodIdx;
-        uint numSubChunks <read=ReadNumSubChunks>;
-        uint dataOffset; // bytes after root node until we find this data
-        uint compressedSize; // size of the data including type and compression headers
-        uint uncompressedSize; // size of the decompressed payload
-
-        local uint dataStart = rootEnd + dataOffset;
-        local uint dataEnd = dataStart + compressedSize;
-        local int64 curPos = FTell();
-        FSeek(dataStart);
-        byte Data[dataEnd - dataStart];
-        FSeek(curPos);
-
-        end = FTell() + (len - 20);
-    }
-    else if (nodeType == SubChunk)
-    {
-        uint dataOffset; // bytes after root node until we find this data
-        uint compressedSize; // size of data including type and compression headers
-        uint uncompressedSize; // size of the decompressed payload
-        vec3 boundsMin; // names a guess for these
-        vec3 boundsMax;
-
-        local uint dataStart = rootEnd + dataOffset;
-        local uint dataEnd = dataStart + compressedSize;
-        local int64 curPos = FTell();
-        FSeek(dataStart);
-        byte Data[dataEnd - dataStart];
-        FSeek(curPos);
-
-        end = FTell() + (len - 36);
-    }
-
-    check64 = ReadUInt64();
-    if( check64 == NODE_TAG_MAGIC ) {
-        
-        while( FTell() < end ) {
-            NODE child;
-        }
-    }
+struct LZMAHeader {
+	byte lc : 4;
+	byte lp : 2;
+	byte pb : 2;
+	uint32 dictSize;
+	uint64 uncompressedSize;
 };
 
-//struct DATA {
-//    char magic[4];
-//    check32 = ReadUInt();
-//    while( !FEof() && ((FTell() + 4 > FileSize()) || (check32 != DATA1_MAGIC && check32 != DATA2_MAGIC)) ) {
-//        byte data;
-//        if( FTell() + 4 <= FileSize() )
-//            check32 = ReadUInt();
-//    }
-//};
+struct LZMA(int dataSize) {
+	//LZMAHeader Header;
+	byte Data[dataSize/* - 12*/];
+};
+
+struct NODE;
+struct NODE {
+	uint64 magicTag<hidden=true>;
+	enum <uint32> {
+		Root = 262144,
+		Lod = 262145,
+		SubChunk = 262146
+	} nodeType;
+	uint32 len;
+
+	local uint64 end = FTell() + len;
+
+	if (nodeType == Root)
+	{
+		uint version;
+		uint64 timestamp;
+		uint numLods;
+
+		end = FTell() + (len - 16);
+		rootEnd = len + 1;
+	}
+	else if (nodeType == Lod)
+	{
+		uint lodIdx;
+		uint numSubChunks <read=ReadNumSubChunks>;
+		uint dataOffset; // bytes after root node until we find this data
+		uint compressedSize; // size of the data including type and compression headers
+		uint uncompressedSize; // size of the decompressed payload
+
+		local uint dataStart = rootEnd + dataOffset;
+		local uint dataEnd = dataStart + compressedSize;
+
+		local int64 curPos = FTell();
+		FSeek(dataStart);
+		LZMA compressedData(dataEnd - dataStart);
+		FSeek(curPos);
+
+		end = FTell() + (len - 20);
+	}
+	else if (nodeType == SubChunk)
+	{
+		uint dataOffset; // bytes after root node until we find this data
+		uint compressedSize; // size of data including type and compression headers
+		uint uncompressedSize; // size of the decompressed payload
+		vec3 boundsMin; // names a guess for these
+		vec3 boundsMax;
+
+		local uint dataStart = rootEnd + dataOffset;
+		local uint dataEnd = dataStart + compressedSize;
+
+		local int64 curPos = FTell();
+		FSeek(dataStart);
+		LZMA compressedData(dataEnd - dataStart);
+		FSeek(curPos);
+
+		end = FTell() + (len - 36);
+	}
+
+	check64 = ReadUInt64();
+	if( check64 == NODE_TAG_MAGIC ) {
+		
+		while( FTell() < end ) {
+			NODE child;
+		}
+	}
+};
 
 NODE root;
 
-//check32 = ReadUInt();
-//while( !FEof() && (check32 == DATA1_MAGIC || check32 == DATA2_MAGIC) ) {
-//    DATA data;
-//    if( FTell() + 4 <= FileSize() )
-//        check32 = ReadUInt();
-//}
 
-//byte[] ReadData(uint start, uint end) {
-//    local int64 prevLoc = FTell();
-//
-//    FSeek(start);
-//
-//    byte ret[end - start];
-//
-//    FSeek(prevLoc);
-//
-//    return ret;
-//}
 
-string ReadNumSubChunks(uint numSubChunks)
-{
-    local uint numSubChunksCount = 1 << 2 * numSubChunks;
-    local string count;
-    SPrintf(count, "%i", numSubChunksCount);
-    return count;
+string ReadNumSubChunks(uint numSubChunks) {
+	local uint numSubChunksCount = 1 << 2 * numSubChunks;
+	local string count;
+	SPrintf(count, "%i", numSubChunksCount);
+	return count;
 }
 
-string Vec3Display(vec3 vec)
-{
-    string s;   
-    SPrintf( s, "%f, %f, %f", vec[0], vec[1], vec[2] );
-    return s;
+string Vec3Display(vec3 vec) {
+	string s;	
+	SPrintf( s, "%f, %f, %f", vec[0], vec[1], vec[2] );
+	return s;
 }
