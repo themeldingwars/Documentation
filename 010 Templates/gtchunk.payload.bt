@@ -49,7 +49,7 @@ struct matrix3x4 {
     vec3 d<read=Vec3Display, optimize=false>;
 };
 
-// Geometry Node Data
+// CollisionGeometry1 Node Data
 //============================
 
 struct GeoVertData {
@@ -100,7 +100,7 @@ struct moppDataBlock {
     ushort shorts[numShorts];
 };
 
-struct GeometryData(uint nodeSize) {
+struct CollisionGeometryData(uint nodeSize) {
     local uint startPos = FTell();    
 
     uint magic;
@@ -258,17 +258,17 @@ struct PropNodeEntry_ParticleData {
     byte last[20];
 };
 
-// Mesh instances ?
+// GT
 //============================
 
-struct MeshInstanceBlock(uint32 type) {
+struct GeometryTreeBlock(uint32 type) {
     ushort count_entries; // Tied to chunk sections, eg high lod sub chunks have fewer entries per instance
     
     ushort const1; // "3"
     uint const2;   // "8"
     uint const3;   // "64"
 
-    struct MeshInstanceEntry(uint32 type) {
+    struct GeometryTreeEntry(uint32 type) {
         uint idx; // chunk node index
         uint count1;
         if (count1 > 0) {
@@ -276,7 +276,7 @@ struct MeshInstanceBlock(uint32 type) {
                 vec3 min<read=Vec3Display>;
                 vec3 max<read=Vec3Display>;
                 
-                if (type == MeshInstance) {
+                if (type == GeometryTree) {
                     uint64 unkLong<format=hex>; // ?
                 }
 
@@ -290,7 +290,7 @@ struct MeshInstanceBlock(uint32 type) {
                         uint textureId2; // optional .r5tex
                         uint textureId3; // optional .r5tex
                         
-                        if (type == MeshInstance2) {
+                        if (type == GeometryTree2) {
                             vec3 center<read=Vec3Display>; // ?
                             float extrafloat; // ?
                         }
@@ -305,35 +305,30 @@ struct MeshInstanceBlock(uint32 type) {
                         uint transformCount;
                         matrix4x4 transform[transformCount]<optimize=false>;
                         
-                        ushort unk3_1; 
-                        ushort unk3_2;
-                        uint compressedDataLength1;
-                        byte lz77_data1[compressedDataLength1];
+                        uint lz77_data1_num;
+                        uint lz77_data1_compressedSize;
+                        byte lz77_data1_uniqueIdx[lz77_data1_compressedSize]<comment="compressed">; // should somehow produce vertices?"
                         
-                        ushort unk4_1;
-                        ushort unk4_2;
-                        uint compressedDataLength2;
-                        byte lz77_data2[compressedDataLength2];
+                        uint lz77_data2_num;
+                        uint lz77_data2_compressedSize;
+                        byte lz77_data2_xformIdx[lz77_data2_compressedSize]<comment="compressed">; // specifies which transform to use for a vertice
 
                         // imagine this will break at some point
-                        uint unk5;
+                        uint num; // 3*tris
                         byte unk6[2];
                         // --
         
-                        ushort unk7_1;
-                        ushort unk7_2;
-                        uint compressedDataLength3;
-                        byte lz77_data3[compressedDataLength3];
+                        uint lz77_data3_num;
+                        uint lz77_data3_compressedSize;
+                        byte lz77_data3[lz77_data3_compressedSize]<comment="compressed">;
         
-                        ushort unk8_1;
-                        ushort unk8_2;
-                        uint compressedDataLength4;
-                        byte lz77_data4[compressedDataLength4];
+                        uint lz77_data4_num;
+                        uint lz77_data4_compressedSize;
+                        byte lz77_data4[lz77_data4_compressedSize]<comment="compressed">;
                         
-                        ushort unk9_1;
-                        ushort unk9_2;
-                        uint compressedDataLength5;
-                        byte lz77_data5[compressedDataLength5];
+                        uint lz77_data5_repTblNum; // num/3
+                        uint lz77_data5_compressedSize;
+                        byte lz77_data5_triangles[lz77_data5_compressedSize]<comment="compressed">; // specifies how to form triangles from vertices
         
                         uint unk10; // ?
                     };
@@ -348,10 +343,10 @@ struct MeshInstanceBlock(uint32 type) {
             struct count2Data(uint32 type) {
                 float endtenfloats[10];
 
-                if (type == MeshInstance) {
+                if (type == GeometryTree) {
                     byte endunk[16];
                 }
-                else if (type == MeshInstance2) {
+                else if (type == GeometryTree2) {
                     byte endunk[8];
                 }
             };
@@ -359,7 +354,7 @@ struct MeshInstanceBlock(uint32 type) {
         }
 
     };
-    MeshInstanceEntry entries(type)[count_entries]<optimize=false>;
+    GeometryTreeEntry entries(type)[count_entries]<optimize=false>;
 };
 
 
@@ -554,11 +549,11 @@ struct Node {
                     TerrainChunk_QuadTree_QQ6 = 4152328087,
                 TerrainChunk_T3 = 3, // list of terrain materials to load
                 TerrainChunk_T4 = 4, // shape data?
-            Geometry         = 262401, // main collision data?
+            CollisionGeometry1         = 262401, // main collision data?
             SubZoneGrid      = 262402,
-            Geometry3        = 262403, // spawn closet blocking volume?
+            CollisionGeometry3        = 262403, // spawn closet blocking volume?
             PropEncNameReg2  = 262404, // seen in shared lod data,  "chunk prop encounter name registry"
-            Geometry2        = 262405, // water area volume?
+            CollisionGeometry2        = 262405, // water area volume?
             PropsNode        = 262656, // parent, children are "prop type layer"
                 PropType_Doodad           = 327680, // same id as zone files, probably same parsing then
                 PropType_EnvironmentData  = 327681, // environment prop data, these ids are also in the zone files
@@ -582,7 +577,7 @@ struct Node {
                 PropType_AudioVolume      = 327700,
                 PropType_Monster          = 327703,
                 PropType_DecalInstances2  = 327704,
-            MeshInstance2    = 262659, // rocks/houses/containers/etc.
+            GeometryTree2    = 262659, // rocks/houses/containers/etc.
             PropEncNameReg   = 262660, // "chunk prop encounter name registry"
             VegationChunk    = 262661,
             OverlayChunk     = 262662,
@@ -590,15 +585,15 @@ struct Node {
                 SectorsEntry    = 327699,
             WaterObjectChunk = 262664,
             VegationChunk2   = 262665,
-            MeshInstance     = 262672
+            GeometryTree     = 262672
             
         } nodeType;
         uint32 len;
 
     local uint64 startPos = FTell();
 
-    if (nodeType == Geometry || nodeType == Geometry2 || nodeType == Geometry3) {
-        GeometryData data(len);
+    if (nodeType == CollisionGeometry1 || nodeType == CollisionGeometry2 || nodeType == CollisionGeometry3) {
+        CollisionGeometryData data(len);
         local uint remaining = len - sizeof(data);
         if (remaining > 0) {
             byte leftData[remaining];
@@ -652,8 +647,8 @@ struct Node {
         }
     }
     
-    else if (nodeType == MeshInstance || nodeType == MeshInstance2) {
-        MeshInstanceBlock data(nodeType);
+    else if (nodeType == GeometryTree || nodeType == GeometryTree2) {
+        GeometryTreeBlock data(nodeType);
         local uint remaining = len - sizeof(data);
         if (remaining > 0) {
             byte leftData[remaining];
