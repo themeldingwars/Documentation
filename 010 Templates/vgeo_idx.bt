@@ -1,0 +1,55 @@
+//------------------------------------------------
+//--- 010 Editor v11.0.1 Binary Template
+//
+//      File: 
+//   Authors: Xsear
+//   Version: 
+//   Purpose: 
+//  Category: 
+// File Mask: 
+//  ID Bytes: 
+//   History: 
+//------------------------------------------------
+
+struct vec3 {
+    float x;
+    float y;
+    float z;
+};
+
+string Vec3Display(vec3 &vec)
+{
+    string s;   
+    SPrintf( s, "%g, %g, %g", vec.x, vec.y, vec.z );
+    return s;
+}
+
+//---
+
+struct indexData {
+    uint64 unk1; // total offset?
+    uint unk2;
+    ushort numVerts;
+    
+    if (numVerts >= 1) {
+        ushort unk3; // section offset amount?
+        byte data[256]; 
+    }
+};
+
+// ---
+
+int VGIndexVersion; // 1962 allows 3, 1 or 2.
+
+if (2 < VGIndexVersion) {
+    byte VGPageUsageBits;
+}
+
+int indexLength;
+if (0 < indexLength) {
+    indexData indexTable[indexLength]<optimize=false>;
+}
+
+uint unk_4_size;
+//byte unk_data[12 * unk_size];
+vec3 unk_4_data[unk_4_size]<read=Vec3Display>;
