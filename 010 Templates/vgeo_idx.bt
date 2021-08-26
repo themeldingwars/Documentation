@@ -26,8 +26,8 @@ struct indexData {
     ushort numVerts;
     
     if (numVerts > 0 && VGIndexVersion != 1) { // Probably not the index version that controls this but checks out.
-        ushort sectionByteLength;
-        byte data[256]; 
+        ushort sectionByteLength; // Length of the page data including first byte
+        byte vertIndexBitfield[256]; // Each set bit is the index of each vert on the page
     }
 };
 // --
@@ -45,7 +45,7 @@ if (indexLength > 0) {
 }
 
 uint unk1_count;
-vec3 unk1_data[unk1_count]<read=Vec3Display>;
+vec3 unk1_data[unk1_count]<read=Vec3Display>; // somehow related to texture/material coordinates
 
 if (VGIndexVersion == 1) {
     uint unk2_count; // more crcs?
