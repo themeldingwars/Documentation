@@ -106,7 +106,8 @@ struct CollisionGeometryData(uint nodeSize) {
     uint magic;
     ushort version; // ? should be 3
     ushort revision; // ? checked if less than 5
-    uint unk1; // seems like a unique id
+    uint id; // seems like a unique id
+
     uint numPhysicsMatIds;
     uint physicsMatIds[numPhysicsMatIds];
 
@@ -300,7 +301,8 @@ struct GeometryTreeBlock(uint32 type) {
                         
                         ushort unk1_1;
                         ushort unk1_2;
-                        uint unk2; // 0, room for compressed data?
+
+                        uint unk2; // ? might ref count 2 data
        
                         uint transformCount;
                         matrix4x4 transform[transformCount]<optimize=false>;
@@ -313,24 +315,22 @@ struct GeometryTreeBlock(uint32 type) {
                         uint lz77_data2_compressedSize;
                         byte lz77_data2_xformIdx[lz77_data2_compressedSize]<comment="compressed">; // specifies which transform to use for a vertice
 
-                        // imagine this will break at some point
+                        
                         uint num; // 3*tris
-                        byte unk6[2];
-                        // --
-        
+                        short lz77_data3_offset;
                         uint lz77_data3_num;
                         uint lz77_data3_compressedSize;
-                        byte lz77_data3[lz77_data3_compressedSize]<comment="compressed">;
+                        byte lz77_data3_repeatIdx[lz77_data3_compressedSize]<comment="compressed">;
         
                         uint lz77_data4_num;
                         uint lz77_data4_compressedSize;
-                        byte lz77_data4[lz77_data4_compressedSize]<comment="compressed">;
+                        byte lz77_data4_vertIndex[lz77_data4_compressedSize]<comment="compressed">;
                         
                         uint lz77_data5_repTblNum; // num/3
                         uint lz77_data5_compressedSize;
                         byte lz77_data5_triangles[lz77_data5_compressedSize]<comment="compressed">; // specifies how to form triangles from vertices
         
-                        uint unk10; // ?
+                        uint unk10; // ? might ref count 2 data
                     };
                     innerData inner_data(type)[count_inner]<optimize=false>;
                 }
@@ -344,11 +344,10 @@ struct GeometryTreeBlock(uint32 type) {
                 float endtenfloats[10];
 
                 if (type == GeometryTree) {
-                    byte endunk[16];
+                    uint64 unkLong<format=hex>; // ?
                 }
-                else if (type == GeometryTree2) {
-                    byte endunk[8];
-                }
+                int unk1;
+                int unk2;
             };
             count2Data c2data(type)[count2]<optimize=false>;
         }
