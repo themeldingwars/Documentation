@@ -88,6 +88,11 @@ struct ChunkRef {
     uint32 chunk_record_id;
 };
 
+struct ChunkRef2 {
+    uint32 chunk_x;
+    uint32 chunk_y;
+};
+
 struct Doodad {
     uint32 prop_record_id;
     Vec4f transform[4];
@@ -109,7 +114,11 @@ struct MeldingPerimiterSet {
     uint32 unk1;
     uint32 perimiterCount<hidden=true>;
     LengthDefinedString perimiters[perimiterCount] <optimize=false>;
-    DataUnkBytes data(9)<name="UnknownData3">;
+        
+    byte unk2;
+    if (unk2 != 0) {
+        DataUnkBytes data(8)<name="UnknownData3">;
+    }
 };
 
 struct PathStep {
@@ -314,7 +323,8 @@ struct NODE
             TYPE_MELDING_HEIGHT_MAP_DATA_NODE = 132864, // 0x00070200 large data blob
             TYPE_CHUNK_INFO_LAYER_PARENT = 132096, // 0x00040200
               TYPE_CHUNK_ZONE_RANGE_NODE = 65536, // 0x00000100
-              TYPE_CHUNK_REF_NODE = 65793, // 0x01010100
+              TYPE_CHUNK_REF_NODE = 65793,        // 0x01010100
+              TYPE_CHUNK_REF2_NODE = 65792,       // 0x00010100
             TYPE_WATER_NODE = 131840, // 0x00030200 large data blob
             TYPE_WORLD_CHUNK_IMPORT_NODE = 133376, // 0x00090200
             TYPE_CAMERA_SEQUENCE_NODE = 136448, // 0x00150200
@@ -341,8 +351,10 @@ struct NODE
         uint skybox_record_id;
     } else if( typeID == TYPE_U004_NODE ) {
         DataU004 data;
+    /*
     } else if( typeID == TYPE_U007_NODE ) {
         DataU007 data;
+    */
     } else if( typeID == TYPE_MELDING_PERIMITER_NODE ) {
         MeldingPerimiterSet data<name="MeldingPerimiterSet">;
     } else if( typeID == TYPE_PATH_NODE ) {
@@ -351,6 +363,8 @@ struct NODE
         ChunkZoneRange data<name="ChunkZoneRange">;
     } else if( typeID == TYPE_CHUNK_REF_NODE ) {
         ChunkRef data<name="ChunkRef">;
+    } else if( typeID == TYPE_CHUNK_REF2_NODE ) {
+        ChunkRef2 data<name="ChunkRef2">;
     } else if( typeID == TYPE_WORLD_CHUNK_IMPORT_NODE ) {
         WorldChunk data<name="WorldChunk">;
     } else if( typeID == TYPE_CAMERA_SEQUENCE_NODE ) { 
