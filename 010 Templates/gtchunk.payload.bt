@@ -300,8 +300,7 @@ struct GeometryTreeBlock(uint32 type) {
                         vec3 max<read=Vec3Display>;
                         
                         ushort unk1_1;
-                        ushort unk1_2;
-
+                        ushort unk1_2; // node/leaf count of some form
                         uint unk2; // ? might ref count 2 data
        
                         uint transformCount;
@@ -314,7 +313,12 @@ struct GeometryTreeBlock(uint32 type) {
                         uint lz77_data2_num;
                         uint lz77_data2_compressedSize;
                         byte lz77_data2_xformIdx[lz77_data2_compressedSize]<comment="compressed">; // specifies which transform to use for a vertice
-
+            
+                        if (unk1_2 == 8) {
+                            uint lz77_data6_num;
+                            uint lz77_data6_compressedSize;
+                            byte lz77_data6[lz77_data6_compressedSize]<comment="compressed">; // maybe xformN
+                        }
                         
                         uint num; // 3*tris
                         short lz77_data3_offset;
