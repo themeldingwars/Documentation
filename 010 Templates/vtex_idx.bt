@@ -1,0 +1,71 @@
+//--------------------------------------
+// 010 Editor Template
+// File: vtex_idx, virtual texture index
+// Author: freakbyte, Xsear
+// Note: not complete
+//--------------------------------------
+
+
+/*  
+Each imageinfo entry contains three hashes, each pointing to a different texture file.
+
+public static uint GenerateHash(int textureAssetId)
+{
+    string str = textureAssetId.ToString().PadLeft(8, '0');
+    str = str.Substring(0, str.Length - 3) + "000" + "\\" + str;
+    byte[] bytes = Encoding.ASCII.GetBytes(str);
+
+    uint hash = 0;
+    foreach (byte b in bytes)
+    {
+        hash = (hash << 7) | (hash >> (32 - 7));
+        hash += b;
+    }
+    return hash;
+}
+
+// assault
+uint h1 = GenerateHash(113473);
+uint h2 = GenerateHash(113475);
+uint h3 = GenerateHash(113476);
+*/
+
+
+struct HEADER
+{
+    uint version;
+    uint imageInfoCount;
+};
+
+struct IMAGEINFO
+{
+    uint hash[3];
+    float transform[9];
+    ushort bounds[4];
+    uint offset[4];
+    uint crc;
+};
+
+local int lodCount = 0;
+typedef struct 
+{
+    uint compressedLength;
+    byte compressedData[compressedLength]<comment="LZ77 : Fastlz/Blosc?">;
+    local int level = lodCount++;
+} 
+LODINFO <optimize=false, read=LodInfoComment>;
+
+
+string LodInfoComment( LODINFO &li )
+{
+    local string s;
+    SPrintf(s, "For static.vtex%d ~ Lod map? ", li.level);
+    return s;
+}
+
+struct FILE
+{
+    HEADER header;
+    IMAGEINFO imageInfo[header.imageInfoCount];
+    LODINFO lodInfo[7];
+} file;

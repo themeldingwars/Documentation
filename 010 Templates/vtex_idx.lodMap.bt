@@ -1,0 +1,17 @@
+//------------------------------------------------
+//--- 010 Editor v11.0 Binary Template
+//
+//      File: vtex_idx.lodMap
+//   Authors: Xsear, freakbyte
+//------------------------------------------------
+
+
+struct ROW {
+    uint offset;
+    uint nothing;
+    uint something;
+    uint size;
+};
+
+ROW rows[FileSize()/16];
+
