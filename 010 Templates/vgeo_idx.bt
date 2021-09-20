@@ -1,63 +1,50 @@
 //------------------------------------------------
 //--- 010 Editor v11.0.1 Binary Template
 //
-//      File: 
+//      File: static.vgeo_idx
 //   Authors: Xsear
-//   Version: 
-//   Purpose: 
-//  Category: 
 // File Mask: .vgeo_idx
-//  ID Bytes: 
-//   History: 
 //------------------------------------------------
 
-// Common structs
-struct vec3 {
-    float x;
-    float y;
-    float z;
+struct HEADER
+{
+    int version; // 3, 1 or 2.
+    if (version == 3) {
+        byte pageUsageBits; // 1
+    }
 };
-// --
 
-// Parsing structs
-struct indexData {
+struct PAGEINFO(int version)
+{ 
     uint64 startOffset;
     uint crc32;
     ushort numVerts;
-    
-    if (numVerts > 0 && VGIndexVersion != 1) { // Probably not the index version that controls this but checks out.
-        ushort sectionByteLength; // Length of the page data including first byte
+    if (numVerts > 0 && version != 1) {
+        ushort sectionSize; // Length of the page data including page usage byte
         byte vertIndexBitfield[256]; // Each set bit is the index of each vert on the page
     }
 };
-// --
 
-// Parsing
-int VGIndexVersion; // 3, 1 or 2.
-
-if (VGIndexVersion == 3) {
-    byte VGPageUsageBits;
-}
-
-int indexLength;
-if (indexLength > 0) {
-    indexData indexTable[indexLength]<optimize=false>;
-}
-
-uint unk1_count;
-vec3 unk1_data[unk1_count]<read=Vec3Display>; // somehow related to texture/material coordinates
-
-if (VGIndexVersion == 1) {
-    uint unk2_count; // more crcs?
-    uint unk2_data[unk2_count];
-}
-// --
-
-// Display formatting
-string Vec3Display(vec3 &vec)
+struct TEXTUREINFO
 {
-    string s;   
-    SPrintf( s, "%g, %g, %g", vec.x, vec.y, vec.z );
-    return s;
-}
-// --
+    uint hash1;
+    uint hash2;
+    uint hash3;
+};
+
+struct FILE
+{
+    HEADER header;
+
+    int pageCount;
+    PAGEINFO pageInfo(header.version)[pageCount]<optimize=false>;
+
+    int textureCount;
+    TEXTUREINFO textureInfo[textureCount];
+    
+    if (header.version == 1) {
+        uint otherCount; // more crcs?
+        uint otherData[otherCount];
+    }
+
+} file;
