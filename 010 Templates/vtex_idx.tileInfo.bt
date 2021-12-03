@@ -1,17 +1,14 @@
 //------------------------------------------------
 //--- 010 Editor v11.0 Binary Template
 //
-//      File: vtex_idx.lodMap
+//      File: vtex_idx.tileInfo
 //   Authors: Xsear, freakbyte
 //------------------------------------------------
 
-
 struct ROW {
-    uint offset;
-    uint nothing;
-    uint something;
+    ulong offset;
+    uint crc;
     uint size;
 };
 
 ROW rows[FileSize()/16];
-
