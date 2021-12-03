@@ -10,11 +10,11 @@ struct ENTRY {
     uint a, width, height, d, pixelCount, f, g, h;
     string imageFormat;
     byte padding[15];
-    uint i, j, k, l, m, n, o;
+    uint i, j, k, l, m, n;
     
-    uint offset;
-    uint length;
-
+    uint decompressedSize;
+    uint dataOffset;
+    uint compressedSize;
 };
 
 uint count;
