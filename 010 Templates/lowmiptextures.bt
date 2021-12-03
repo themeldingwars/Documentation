@@ -9,7 +9,7 @@ typedef struct
 {
     uint originalLength;
     uint compressedLength;
-    byte compressedData[compressedLength]<comment="LZ77 : Fastlz/Blosc?">;
+    byte compressedData[compressedLength]<comment="LZMA">;
 } 
 INDEX <optimize=false>;
 
