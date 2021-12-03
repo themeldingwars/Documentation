@@ -53,13 +53,13 @@ typedef struct
     byte compressedData[compressedLength]<comment="LZ77 : Fastlz/Blosc?">;
     local int level = lodCount++;
 } 
-LODINFO <optimize=false, read=LodInfoComment>;
+TILEINFO <optimize=false, read=TileInfoComment>;
 
 
-string LodInfoComment( LODINFO &li )
+string TileInfoComment( TILEINFO &li )
 {
     local string s;
-    SPrintf(s, "For static.vtex%d ~ Lod map? ", li.level);
+    SPrintf(s, "For static.vtex%d ~ TileInfo ", li.level);
     return s;
 }
 
@@ -67,5 +67,5 @@ struct FILE
 {
     HEADER header;
     IMAGEINFO imageInfo[header.imageInfoCount];
-    LODINFO lodInfo[7];
+    TILEINFO tileInfo[7];
 } file;
