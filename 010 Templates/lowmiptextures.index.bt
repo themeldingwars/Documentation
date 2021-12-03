@@ -1,0 +1,21 @@
+//------------------------------------------------
+//--- 010 Editor v11.0 Binary Template
+//
+//      File: lowmiptextures.index
+//   Authors: freakbyte, Xsear
+//------------------------------------------------
+
+struct ENTRY {
+    string path;
+    uint a, width, height, d, pixelCount, f, g, h;
+    string imageFormat;
+    byte padding[15];
+    uint i, j, k, l, m, n, o;
+    
+    uint offset;
+    uint length;
+
+};
+
+uint count;
+ENTRY entries[count];
