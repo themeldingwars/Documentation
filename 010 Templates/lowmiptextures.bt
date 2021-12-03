@@ -1,0 +1,11 @@
+//------------------------------------------------
+//--- 010 Editor v11.0.1 Binary Template
+//
+//      File: lowmiptextures.pak
+//   Authors: freakbyte, Xsear
+//------------------------------------------------
+char magic[4];
+uint a;
+uint b;
+byte lzma1[b];
+byte lzma2[b*2];
