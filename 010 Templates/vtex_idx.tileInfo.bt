@@ -6,7 +6,7 @@
 //------------------------------------------------
 
 struct ROW {
-    ulong offset;
+    uint64 offset;
     uint crc;
     uint size;
 };
