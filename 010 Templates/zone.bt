@@ -36,6 +36,11 @@ struct Vec31 {
     int32 Z<name="Z">;
 };
 
+struct Vec2f {
+    float X<name="X">;
+    float Y<name="Y">;
+};
+
 struct Vec3f {
     float X<name="X">;
     float Y<name="Y">;
@@ -117,7 +122,7 @@ struct MeldingPerimiterSet {
         
     byte unk2;
     if (unk2 != 0) {
-        DataUnkBytes data(8)<name="UnknownData3">;
+        //DataUnkBytes data(8)<name="UnknownData3">;
     }
 };
 
@@ -276,12 +281,13 @@ struct PropEncounterNameRegistry {
 };
 
 struct WorldChunk {
+    // This is exactly the same format as for CollisionGeometry in the gtchunk.payload.bt
     // WIP
     char magic[4];
     char version[4];
-    DataUnkBytes data(24)<name="WorldChunkData_1">;
-    uint32 moppFormatDataLen;
-    DataUnkBytes data(8+moppFormatDataLen)<name="MoppFormatData">;
+    //DataUnkBytes data(24)<name="WorldChunkData_1">;
+    //uint32 moppFormatDataLen;
+    //DataUnkBytes data(8+moppFormatDataLen)<name="MoppFormatData">;
     // yikes
 };
 
@@ -291,6 +297,71 @@ struct ZoneTransferBounds {
     uint32 unk1;
     // ...
 };
+
+struct WaterNode(uint nodeType) {
+    float vec1[3]; // guess origin coordinates
+    
+    uint unk2; // 0, 2 observed. doesn't seem to be a count.
+    uint always_1;
+    uint maybe_flags; // 4, 5 observed, more data included with 5
+    
+    if (maybe_flags == 0x05) // maybe the first bit
+    {
+        byte b1[8];
+    }
+
+    struct p1 {
+        float a; // 0.25, 0.5, 0.75, 1
+        uint b;
+    };
+    p1 p1data[4]; // maybe some lod stuff?
+
+    float f1[3];
+    
+    if (nodeType == TYPE_WATER_NODE) {
+          uint waterdesc_sdb_id;    
+          uint always_zero;
+    }
+    
+    uint data1_count;
+    Vec3f data1[data1_count];
+
+    uint data2_count;
+    Vec2f data2[data2_count];
+
+    uint data3_count;
+    uint data3[data3_count];
+
+    uint data4_count;
+    uint data4[data4_count];
+
+    uint data5_count;
+    uint data5[data5_count];
+
+    if (nodeType == TYPE_WATER_CHILD_NODE) {
+          uint waterdesc_sdb_id;
+    }
+
+    byte moreData; // maybe a count?
+    if (moreData > 0x00) {
+        uint count6; // some x?
+        uint count7; // some y?
+        float f2[5];
+        uint data6[count6*count7]; // data for that
+    }
+    
+    if (nodeType == TYPE_WATER_NODE) {
+        float f3[2];
+        byte last[24];
+    }
+    
+    if (nodeType == TYPE_WATER_CHILD_NODE) {
+        uint always_zero;
+    }
+
+   
+};
+
 
 struct NODE;
 struct NODE
@@ -307,11 +378,13 @@ struct NODE
                   TYPE_U006_NODE = 401, // 0x91010000 Scale? 22 floats/ints and 1 byte
                   TYPE_U007_NODE = 1300, // 0x14050000 8 floats + a short?
                   TYPE_U008_NODE = 1400, // 0x78050000 ??? alpha mask??
+                  TYPE_U019_NODE = 33,
                   TYPE_U009_NODE = 34, // 0x22000000
                   TYPE_U010_NODE = 304, // 0x30010000 some kind of mat4x4?
                   TYPE_U011_NODE = 1000, // 0xE8030000 rotation?
                   TYPE_U012_NODE = 601, // 0x59020000
                   TYPE_U013_NODE = 203, // 0xCB000000 mat3x4?
+                  TYPE_U020_NODE = 1100,
                   TYPE_U014_NODE = 1200, // 0xB0040000
                   TYPE_U015_NODE = 700, // 0xBC020000
                   TYPE_U016_NODE = 900, // 0x84030000
@@ -326,6 +399,7 @@ struct NODE
               TYPE_CHUNK_REF_NODE = 65793,        // 0x01010100
               TYPE_CHUNK_REF2_NODE = 65792,       // 0x00010100
             TYPE_WATER_NODE = 131840, // 0x00030200 large data blob
+              TYPE_WATER_CHILD_NODE = 4,
             TYPE_WORLD_CHUNK_IMPORT_NODE = 133376, // 0x00090200
             TYPE_CAMERA_SEQUENCE_NODE = 136448, // 0x00150200
             TYPE_ZONE_TRANSFER_BOUNDS_NODE = 136704, // 0x00160200 large data blob
@@ -375,6 +449,8 @@ struct NODE
         PropEncounterNameRegistry data<name="PropEncounterNameRegistry">;
     } else if( typeID == TYPE_DOODAD_NODE ) {
         Doodad data<name="Doodad">;
+    } else if( typeID == TYPE_WATER_NODE || typeID == TYPE_WATER_CHILD_NODE ) {
+        WaterNode data(typeID)<name="WaterNode">;
     } else {
         DataUnkBytes data(dataLen)<name="UnknownData">;
     }
