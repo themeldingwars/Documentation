@@ -1,13 +1,11 @@
 //------------------------------------------------
-//--- 010 Editor v10.0.2 Binary Template
+//--- 010 Editor Binary Template
 //
 //      File: .zone
 //   Authors: FallenAvatar, Xsear
-//   Version: 1.1
-//  Category: Game
+//  Category: Firefall
 // File Mask: *.zone
-//  ID Bytes: ZONE
-//   History: 
+//  ID Bytes: 5A 4F 4E 45 // ZONE
 //------------------------------------------------
 
 struct HEADER {
@@ -299,24 +297,34 @@ struct ZoneTransferBounds {
 };
 
 struct WaterNode(uint nodeType) {
-    float vec1[3]; // guess origin coordinates
+    struct unk_flagdata {
+        float a;
+        uint b;
+    };
+    
+    float position[3]; // origin
     
     uint unk2; // 0, 2 observed. doesn't seem to be a count.
     uint always_1;
-    uint maybe_flags; // 4, 5 observed, more data included with 5
+    uint flags; // 4, 5, 7 observed
     
-    if (maybe_flags == 0x05) // maybe the first bit
+    if (flags & 0x01)
     {
-        byte b1[8];
+        unk_flagdata fd_1;
     }
 
-    struct p1 {
-        float a; // 0.25, 0.5, 0.75, 1
-        uint b;
-    };
-    p1 p1data[4]; // maybe some lod stuff?
+    if (flags & 0x02)
+    {
+        unk_flagdata fd_2[2];
+    }    
 
-    float f1[3];
+    if (flags & 0x04)
+    {
+        // 0.25, 0.5, 0.75, 1
+        unk_flagdata fd_3[4];
+    }
+
+    float f1[3]; // texture scaling related
     
     if (nodeType == TYPE_WATER_NODE) {
           uint waterdesc_sdb_id;    
@@ -324,19 +332,19 @@ struct WaterNode(uint nodeType) {
     }
     
     uint data1_count;
-    Vec3f data1[data1_count];
+    Vec3f data1[data1_count]; // vec 3 data
 
     uint data2_count;
-    Vec2f data2[data2_count];
+    Vec2f data2[data2_count]; // vec 2 data
 
     uint data3_count;
-    uint data3[data3_count];
+    uint data3[data3_count]; // maybe some data for the vec3s?
 
     uint data4_count;
-    uint data4[data4_count];
+    uint data4[data4_count]; // maybe some data for the vec2s?
 
     uint data5_count;
-    uint data5[data5_count];
+    uint data5[data5_count]; // some indexing or mapping data
 
     if (nodeType == TYPE_WATER_CHILD_NODE) {
           uint waterdesc_sdb_id;
