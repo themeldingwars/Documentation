@@ -1,34 +1,40 @@
 //------------------------------------------------
-//--- 010 Editor v10.0.2 Binary Template
+//--- 010 Editor Binary Template
 //
 //      File: .worldMap
-//   Authors: FallenAvatar
-//   Version: 1.0
-//  Category: Game
+//   Authors: freakbyte, FallenAvatar
+//  Category: Firefall
 // File Mask: *.worldMap
-//  ID Bytes: GTNO
-//   History: 
+//  ID Bytes: 47 54 4E 4F // GTNO
 //------------------------------------------------
 
+#ifndef VEC3F
+#define VEC3F true
 struct Vec3f {
     float X;
     float Y;
     float Z;
 };
+#endif
 
-struct HEADER {
-    char magic[4]<hidden=true>;
-    int32 version[3];
-    uint32 entryId;
-    uint32 zoomLvl;
-    Vec3f corners[3]; // maybe bounds? not sure
-    uint32 LodSubsectionId;
-    byte padding<hidden=true>;
-    uint32 reminder;
-    uint32 payloadExtractedSize;
-    uint32 payloadCompressedSize;
-    ushort zlibDefaultCompression;
-} hdr<name="Header">;
+struct GTNO {
+    struct GTNO_HEADER {
+        char magic[4]<hidden=true>;
+        int32 version[3];
+        uint32 entryId;
+        uint32 zoomLvl;
+        Vec3f corners[3]; // maybe bounds? not sure
+        uint32 LodSubsectionId;
+        byte unk;
+        uint32 reminder; // data/payload length including the following header data
+        uint32 payloadExtractedSize;
+        uint32 payloadCompressedSize;
+        ushort zlibDefaultCompression;
+    } hdr<name="Header">;
+    
+    byte deflatedPayload[hdr.payloadCompressedSize-2];
+};
 
-
-byte deflatedPayload[hdr.payloadCompressedSize-2];
+if (FTell() == 0) {
+    GTNO data;
+}
