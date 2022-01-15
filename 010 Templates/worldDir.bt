@@ -1,29 +1,31 @@
 //------------------------------------------------
-//--- 010 Editor v10.0.2 Binary Template
+//--- 010 Editor Binary Template
 //
 //      File: .worldDir
-//   Authors: FallenAvatar
-//   Version: 1.0
-//  Category: Game
+//   Authors: freakbyte, FallenAvatar, Xsear
+//  Category: Firefall
 // File Mask: *.worldDir
-//  ID Bytes: 
-//   History: 
+//  ID Bytes: [+8] 57 4D 41 50 // WMAP
 //------------------------------------------------
 
 LittleEndian();
 
+#ifndef VEC3F
+#define VEC3F true
 struct Vec3f {
     float X;
     float Y;
     float Z;
 };
+#endif
 
 struct HEADER {
-    byte unkSame1[8];
+    uint32 unkZero;
+    uint32 headerLength;
     char magic[4]<hidden=true>;
     int version;
     int numTiles;
-    byte unkSameB;
+    byte isDataEmbedded;
     int pathLen;
     char path[pathLen];
     int fileSize;
@@ -32,13 +34,17 @@ struct HEADER {
 struct TILE {
     uint32 unk1;
     uint32 unk2;
-    int nameLen<hidden=true>;
+    int nameLen;
     char filename[nameLen];
-    byte namePadding[33 - nameLen]<hidden=true>;
-    uint32 fileSize;
-
+    uint32 dataOffset;
+    uint32 dataLength;
     uint32 cubemapId;
     uint32 zoomLvl;
     uint32 entryId;
     Vec3f corners[3];
-} Tiles[hdr.numTiles];
+} Tiles[hdr.numTiles]<optimize=false>;
+
+if (hdr.isDataEmbedded) {
+    #include "worldMap.bt";
+    GTNO nodes[hdr.numTiles]<optimize=false>;
+}
