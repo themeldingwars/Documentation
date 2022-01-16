@@ -71,6 +71,11 @@ struct DataU004 {
     float data[6];
 };
 
+struct DataU004_1710 {
+    float data[3];
+};
+
+
 struct DataU007 {
     float data[7];
     uint16 data2;
@@ -296,7 +301,7 @@ struct ZoneTransferBounds {
     // ...
 };
 
-struct WaterNode(uint nodeType) {
+struct WaterNode(uint nodeType, uint64 endOffset) {
     struct unk_flagdata {
         float a;
         uint b;
@@ -364,10 +369,10 @@ struct WaterNode(uint nodeType) {
     }
     
     if (nodeType == TYPE_WATER_CHILD_NODE) {
-        uint always_zero;
+        if (FTell() < endOffset) {
+            uint always_zero; // not present in 1710
+        }
     }
-
-   
 };
 
 
@@ -432,7 +437,12 @@ struct NODE
     } else if( typeID == TYPE_SKYBOXRECORD_NODE ) {
         uint skybox_record_id;
     } else if( typeID == TYPE_U004_NODE ) {
-        DataU004 data;
+        if (dataLen > 12) {
+            DataU004 data;
+        }
+        else {
+            DataU004_1710 data;
+        }
     /*
     } else if( typeID == TYPE_U007_NODE ) {
         DataU007 data;
@@ -458,7 +468,7 @@ struct NODE
     } else if( typeID == TYPE_DOODAD_NODE ) {
         Doodad data<name="Doodad">;
     } else if( typeID == TYPE_WATER_NODE || typeID == TYPE_WATER_CHILD_NODE ) {
-        WaterNode data(typeID)<name="WaterNode">;
+        WaterNode data(typeID, end)<name="WaterNode">;
     } else {
         DataUnkBytes data(dataLen)<name="UnknownData">;
     }
