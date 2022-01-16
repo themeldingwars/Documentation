@@ -28,12 +28,12 @@ struct HEADER {
     byte isDataEmbedded;
     int pathLen;
     char path[pathLen];
-    int fileSize;
+    int fileSize; // size of header + all tiles
 } hdr <bgcolor=cBlue>;
 
 struct TILE {
     uint32 unk1;
-    uint32 unk2;
+    uint32 tileLen;
     int nameLen;
     char filename[nameLen];
     uint32 dataOffset;
