@@ -1,116 +1,50 @@
-//--------------------------------------
-// 010 Editor Template
-// File: .gtchunk
-// Author: freakbyte, FallenAvatar, Arkii, Xsear
-//--------------------------------------
+//------------------------------------------------
+//--- 010 Editor Binary Template
+//
+//      File: .gtchunk
+//   Authors: freakbyte, FallenAvatar, Arkii, Xsear
+//  Category: Firefall
+// File Mask: *.gtchunk
+//  ID Bytes: ED 12 5B ED 12 5A ED 12 00 00 04 00
+//------------------------------------------------
 
-local uint64 NODE_TAG_MAGIC = 1363845299501208301;
-// 3977403373
-// 1413563424
+#include "_common_types.bt"
+#include "_common_gtlayer.bt"
 
-local uint32 DATA1_MAGIC = 1096040772; // "DATA", Compressed with zlib/Deflate
-local uint32 DATA2_MAGIC = 844382532; // "DAT2", Compressed with LZMA
-
-local uint64 check64 = 0;
-local uint32 check32 = 0;
-
-local uint32 rootEnd = 0;
-
-typedef float vec3[3] <read=Vec3Display>;
-
-struct LZMAHeader {
-	byte lc : 4;
-	byte lp : 2;
-	byte pb : 2;
-	uint32 dictSize;
-	uint64 uncompressedSize;
+struct COMPRESSED_DATA(uint length) {
+    char magic[4];
+    byte data[length-4];
 };
-
-struct LZMA(int dataSize) {
-	//LZMAHeader Header;
-	byte Data[dataSize/* - 12*/];
-};
-
-struct NODE;
-struct NODE {
-	uint64 magicTag<hidden=true>;
-	enum <uint32> {
-		Root = 262144,
-		Lod = 262145,
-		SubChunk = 262146
-	} nodeType;
-	uint32 len;
-
-	local uint64 end = FTell() + len;
-
-	if (nodeType == Root)
-	{
-		uint version;
-		uint64 timestamp;
-		uint numLods;
-
-		end = FTell() + (len - 16);
-		rootEnd = len + 1;
-	}
-	else if (nodeType == Lod)
-	{
-		uint lodIdx;
-		uint numSubChunks <read=ReadNumSubChunks>;
-		uint dataOffset; // bytes after root node until we find this data
-		uint compressedSize; // size of the data including type and compression headers
-		uint uncompressedSize; // size of the decompressed payload
-
-		local uint dataStart = rootEnd + dataOffset;
-		local uint dataEnd = dataStart + compressedSize;
-
-		local int64 curPos = FTell();
-		FSeek(dataStart);
-		LZMA compressedData(dataEnd - dataStart);
-		FSeek(curPos);
-
-		end = FTell() + (len - 20);
-	}
-	else if (nodeType == SubChunk)
-	{
-		uint dataOffset; // bytes after root node until we find this data
-		uint compressedSize; // size of data including type and compression headers
-		uint uncompressedSize; // size of the decompressed payload
-		vec3 boundsMin; // names a guess for these
-		vec3 boundsMax;
-
-		local uint dataStart = rootEnd + dataOffset;
-		local uint dataEnd = dataStart + compressedSize;
-
-		local int64 curPos = FTell();
-		FSeek(dataStart);
-		LZMA compressedData(dataEnd - dataStart);
-		FSeek(curPos);
-
-		end = FTell() + (len - 36);
-	}
-
-	check64 = ReadUInt64();
-	if( check64 == NODE_TAG_MAGIC ) {
-		
-		while( FTell() < end ) {
-			NODE child;
-		}
-	}
-};
-
-NODE root;
-
-
-
-string ReadNumSubChunks(uint numSubChunks) {
-	local uint numSubChunksCount = 1 << 2 * numSubChunks;
-	local string count;
-	SPrintf(count, "%i", numSubChunksCount);
-	return count;
+string CompressedHeaderDisplay(COMPRESSED_DATA &data)
+{
+    if (data.magic == "DATA") {
+        return "DATA / Zlib/Deflate";
+    }
+    else if (data.magic == "DAT2") {
+        return "DAT2 / LZMA";
+    }
+    else {
+        return "UNKNOWN";
+    }
 }
 
-string Vec3Display(vec3 vec) {
-	string s;	
-	SPrintf( s, "%f, %f, %f", vec[0], vec[1], vec[2] );
-	return s;
-}
+struct FILE {
+    // Root layer / Index
+    Layer root(NO_PARENT)<comment="index">;
+    
+    // Compressed data
+    local int lod<hidden=true>;
+    local int subchunk<hidden=true>;
+    local uint baseOffset<hidden=true> = FTell();
+    for (lod = 0; lod < root.data.numLods; lod++) {
+        struct DATA {
+            FSeek(baseOffset + root.child[lod].data.dataOffset);
+            COMPRESSED_DATA data(root.child[lod].data.compressedSize)<read=CompressedHeaderDisplay, comment="LOD Shared Data">;
+
+            for(subchunk = 0; subchunk < (1 << 2 * root.child[lod].data.numSubChunks); subchunk++) {
+                FSeek(baseOffset + root.child[lod].child[subchunk].data.dataOffset);
+                COMPRESSED_DATA data(root.child[lod].child[subchunk].data.compressedSize)<read=CompressedHeaderDisplay, comment="SubChunk Data">;
+            };
+        } lod_data<comment="Compressed data for each LOD, referenced by index">;
+    };
+} gtchunk;

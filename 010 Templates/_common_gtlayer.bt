@@ -1,0 +1,1420 @@
+//------------------------------------------------
+//--- 010 Editor Binary Template
+//
+//      File: GTChunk/Zone Layer Parsing
+//   Authors: freakbyte, FallenAvatar, Arkii, Xsear
+//  Category: Firefall
+// File Mask:
+//  ID Bytes:
+//------------------------------------------------
+
+#include "_common_types.bt"
+
+#ifndef FF_COMMON_GTLAYER
+#define FF_COMMON_GTLAYER 1
+
+local uint64 NODE_TAG_MAGIC<hidden=true> = 0x12ED5A12ED5B12ED;
+
+typedef enum <uint32> {
+        // Hack
+        NO_PARENT = 0xFFFFFFFF,
+
+        // Zone
+        ZONE                                             = 0x30000,
+        ZONE_SKYBOX                                      = 0x20000,
+        ZONE_DEFAULT_ENVIRONMENT                         = 0x20100,
+            DEFAULT_ENVIRONMENT_10000                    = 0x02710, // 6 floats, forming 2 points. For some (indoor?) zones, they are the same.
+        ZONE_MELDING                                     = 0x20200,
+            MELDING_PERIMITER                            = 5,
+        ZONE_WATER                                       = 0x20300,
+            WATER_CHILD                                  = 4,       // Legacy
+        ZONE_CHUNK_INFO                                  = 0x20400, 
+            CHUNK_INFO_RANGE                             = 0x10000,
+            CHUNK_INFO_REF                               = 0x10101, 
+            CHUNK_INFO_REF2                              = 0x10100,
+        ZONE_MELDING_HEIGHT_MAP_DATA                     = 0x20700,
+        ZONE_PATH                                        = 0x20800,
+        ZONE_WORLD_CHUNK_IMPORT                          = 0x20900,
+        ZONE_135168                                      = 0x21000, // Bounds but for what, hey are bottom left and top right of zone though not all the way to the edge.
+        ZONE_PROP_ENCOUNTER_NAME_REGISTRY                = 0x21200,
+        ZONE_PROP                                        = 0x21400,
+        ZONE_CAMERA_SEQUENCE                             = 0x21500,
+        ZONE_TRANSFER_BOUNDS                             = 0x21600,
+        ZONE_SUBZONE_REGION                              = 0x21700,
+
+        // GTChunk Index
+        CHUNK                                            = 0x40000,
+        CHUNK_LOD                                        = 0x40001,
+        CHUNK_SUBCHUNK                                   = 0x40002,
+        
+        // GTChunk Payload
+        CHUNK_TERRAIN                                    = 0x40100, // parent, children are "terrain chunk layer"
+            TERRAIN_T0                                   = 0, // meta, init?
+            TERRAIN_MATERIALS                            = 1, // parent, children are "terrain chunk material layer"
+                TERRAIN_MATERIAL                         = 5,
+            TERRAIN_QUADTREE                             = 2, // has data and children, children are "terrain chunk quadtree layer"
+                TERRAIN_QUADTREE_BLENDWEIGHT             = 8, // children are "terrain blend weight layer"
+                    TERRAIN_QUADTREE_BLENDWEIGHT_0       = 0,
+                    TERRAIN_QUADTREE_BLENDWEIGHT_2       = 2,
+                TERRAIN_QUADTREE_T9                      = 9,
+                TERRAIN_QUADTREE_T11                     = 11,
+                TERRAIN_QUADTREE_QQ1                     = 0x55555555,
+                TERRAIN_QUADTREE_QQ2                     = 0x575FFFF8,
+                TERRAIN_QUADTREE_QQ3                     = 0xA0A0A0A0,
+                TERRAIN_QUADTREE_QQ4                     = 0xAA2A2A0A,
+                TERRAIN_QUADTREE_QQ5                     = 0xEFFFDFD7,
+                TERRAIN_QUADTREE_QQ6                     = 0xF77F7F97,
+            TERRAIN_T3                                   = 3, // list of terrain materials to load
+            TERRAIN_T4                                   = 4, // shape data?
+        CHUNK_COLLISION1                                 = 0x40101, // main collision data
+        CHUNK_SUBZONEGRID                                = 0x40102,
+        CHUNK_COLLISION3                                 = 0x40103, // blocking volumes?
+        CHUNK_PROP_ENCOUNTER_NAME_REGISTRY2              = 0x40104,
+        CHUNK_COLLISION2                                 = 0x40105, // water volumes?
+        CHUNK_PROP                                       = 0x40200,
+        CHUNK_GEOMETRY2                                  = 0x40203,
+        CHUNK_PROP_ENCOUNTER_NAME_REGISTRY               = 0x40204,
+        CHUNK_VEGETATION                                 = 0x40205,
+        CHUNK_OVERLAY                                    = 0x40206,
+        CHUNK_SECTORS                                    = 0x40207,
+        CHUNK_WATER                                      = 0x40208,
+        CHUNK_VEGETATION2                                = 0x40209,
+        CHUNK_GEOMETRY                                   = 0x40210,
+      
+        PROP_DOODAD                                      = 0x50000,
+        PROP_ENVIRONMENT                                 = 0x50001,
+          ENVIRONMENT_0033                               = 0x00021,
+          ENVIRONMENT_0034                               = 0x00022,
+          ENVIRONMENT_0203                               = 0x000CB, // Mat3x4?
+          ENVIRONMENT_0304                               = 0x00130, // Some kind of mat4x4?
+          ENVIRONMENT_0401                               = 0x00191, // Scale? 22 floats/ints and 1 byte
+          ENVIRONMENT_0501                               = 0x001F5,
+          ENVIRONMENT_0601                               = 0x00259,
+          ENVIRONMENT_0700                               = 0x002BC,
+          ENVIRONMENT_0800                               = 0x00320,
+          ENVIRONMENT_0900                               = 0x00384,
+          ENVIRONMENT_1000                               = 0x003E8, // Rotation?
+          ENVIRONMENT_1100                               = 0x0044C,
+          ENVIRONMENT_1200                               = 0x004B0,
+          ENVIRONMENT_1300                               = 0x00514, // 8 floats + a short?
+          ENVIRONMENT_1400                               = 0x00578, // ??? alpha mask??
+        PROP_PROBEDATA                                   = 0x50006,
+        PROP_DECALINSTANCES1                             = 0x50008,
+        PROP_PARTICLEDATA                                = 0x5000D,
+        PROP_LIGHTDATA                                   = 0x50011,
+        PROP_SECTOR                                      = 0x50013, // Child of CHUNK_SECTORS
+        PROP_AUDIOVOLUME                                 = 0x50014,
+        PROP_MONSTER                                     = 0x50017,
+        PROP_DECALINSTANCES2                             = 0x50018,
+        
+
+
+} LayerType;
+
+// Remove?
+struct DataUnkBytes(int dataSize) {
+    byte data[dataSize]<name="Bytes">;
+};
+
+// CHUNK
+struct ChunkRootLayerData {
+    uint version;
+    uint64 timestamp;
+    uint numLods;
+};
+
+// CHUNK_LOD
+struct ChunkLodLayerData {
+    uint lodIdx;
+    uint numSubChunks <read=ReadNumSubChunks, comment="">;
+    uint dataOffset<comment="Bytes after root node until we find this data">;
+    uint compressedSize<comment="Size of the data including type and compression headers">; 
+    uint uncompressedSize<comment="Size of the decompressed payload">;
+};
+string ReadNumSubChunks(uint numSubChunks)
+{
+    local uint numSubChunksCount = 1 << 2 * numSubChunks;
+    local string count;
+    SPrintf(count, "%i", numSubChunksCount);
+    return count;
+}
+
+// CHUNK_SUBCHUNK
+struct ChunkSubChunkLayerData {
+    uint dataOffset<comment="Bytes after root node until we find this data">;
+    uint compressedSize<comment="Size of the data including type and compression headers">; 
+    uint uncompressedSize<comment="Size of the decompressed payload">;
+    Vec3f boundsMin<read=Vec3fDisplay, comment="">;
+    Vec3f boundsMax<read=Vec3fDisplay, comment="">;
+};
+
+// CHUNK_WATER
+// ZONE_WATER
+struct unk_WaterFlagData {
+    float a;
+    uint b;
+};
+struct WaterLayerData {    
+    Vec3f position <comment="Origin">;
+    
+    uint unk2 <comment="0, 2 observed. doesn't seem to be a count.">; 
+    uint always_1 <comment="No other values than 1 observed.">;
+    uint flags <comment="Usage of first 3 bits observed, affects the amount of unk_flagdata present.">;
+    
+    if (flags & 0x01)
+    {
+        unk_WaterFlagData fd_1;
+    }
+
+    if (flags & 0x02)
+    {
+        unk_WaterFlagData fd_2[2];
+    }    
+
+    if (flags & 0x04)
+    {
+        // 0.25, 0.5, 0.75, 1
+        unk_WaterFlagData fd_3[4];
+    }
+
+    Vec3f textureScale <comment="Texture scaling related">;
+    
+    uint waterdesc_sdb_id;    
+    uint always_zero <comment="No other values than 0 observed.">;
+
+    uint data1_count;
+    Vec3f data1[data1_count] <read=Vec3fDisplay>;
+
+    uint data2_count;
+    Vec2f data2[data2_count] <read=Vec2fDisplay>;
+
+    uint data3_count;
+    uint data3[data3_count];
+
+    uint data4_count;
+    uint data4[data4_count];
+
+    uint data5_count;
+    uint data5[data5_count] <comment="Some indexing or mapping data">;
+
+    byte moreData <comment="Seems to be a bool">;
+    if (moreData > 0x00) {
+        int count6 <comment="Some x?">; 
+        uint count7 <comment="Some y?">; 
+        float f2[5];
+        uint data6[count6*count7] <comment="X*Y data">;
+    }
+
+    Vec4f last1 <comment="Not sure">;
+    Vec4f last2 <comment="Not sure">;
+};
+
+// WATER_CHILD (Legacy)
+struct WaterChildLayerData(uint64 endOffset) {
+    Vec3f position <comment="Origin">;
+    
+    uint unk2 <comment="0, 2 observed. doesn't seem to be a count.">; 
+    uint always_1 <comment="No other values than 1 observed.">;
+    uint flags <comment="Usage of first 3 bits observed, affects the amount of unk_flagdata present.">;
+    
+    if (flags & 0x01)
+    {
+        unk_WaterFlagData fd_1;
+    }
+
+    if (flags & 0x02)
+    {
+        unk_WaterFlagData fd_2[2];
+    }    
+
+    if (flags & 0x04)
+    {
+        // 0.25, 0.5, 0.75, 1
+        unk_WaterFlagData fd_3[4];
+    }
+
+    Vec3f textureScale <comment="Texture scaling related">;
+
+    uint data1_count;
+    Vec3f data1[data1_count] <read=Vec3fDisplay>;
+
+    uint data2_count;
+    Vec2f data2[data2_count] <read=Vec2fDisplay>;
+
+    uint data3_count;
+    uint data3[data3_count];
+
+    uint data4_count;
+    uint data4[data4_count];
+
+    uint data5_count;
+    uint data5[data5_count] <comment="Some indexing or mapping data">;
+    
+    uint waterdesc_sdb_id;
+
+    byte moreData <comment="Seems to be a bool">;
+    if (moreData > 0x00) {
+        int count6 <comment="Some x?">; 
+        uint count7 <comment="Some y?">; 
+        float f2[5];
+        uint data6[count6*count7] <comment="X*Y data">;
+    }
+    
+    if (FTell() < endOffset) {
+        // Not present in 1710
+        uint always_zero <comment="No other values than 0 observed.">;
+    }
+};
+
+// CHUNK_INFO_RANGE
+struct ChunkZoneRangeLayerData {
+    uint32 cubeface;
+    uint32 min_chunk_x;
+    uint32 max_chunk_x;
+    uint32 min_chunk_y;
+    uint32 max_chunk_y;
+};
+
+// CHUNK_INFO_REF
+struct ChunkRefLayerData {
+    uint32 chunk_x;
+    uint32 chunk_y;
+    uint32 chunk_record_id;
+};
+
+// CHUNK_INFO_REF2
+struct ChunkRef2LayerData {
+    uint32 chunk_x;
+    uint32 chunk_y;
+};
+
+// MELDING_PERIMITER
+struct MeldingPerimiterSetLayerData {
+    uint32 nameLen<hidden=true>;
+    char name[nameLen];
+    uint32 controlPoints;
+    uint32 bitfieldBitLength;
+    byte bitfield[Ceil(bitfieldBitLength/8.0)];
+    uint32 unk1;
+    uint32 perimiterCount<hidden=true>;
+    LengthDefinedString perimiters[perimiterCount] <optimize=false>;
+        
+    byte unk2;
+    if (unk2 != 0) {
+        //DataUnkBytes data(8)<name="UnknownData3">;
+    }
+};
+
+
+// ZONE_135168
+// Bounds but what for?
+struct Zone_135168_LayerData {
+    Vec3f min;
+    Vec3f max;
+};
+
+// ZONE_SKYBOX
+struct SkyBoxRecordLayerData {
+    uint skybox_record_id;
+};
+
+// ZONE_PATH
+struct PathStep {
+    Vec3f position;
+    Vec4f orientation;
+    uint actionLen<hidden=true>;
+    if (actionLen > 0) {   
+        char action[actionLen];
+    }
+};
+struct PathLayerData {
+    uint cce_id;
+    uint unk1;
+    uint stepsCount<hidden=true>;
+    PathStep steps[stepsCount] <optimize=false>;
+};
+
+// ZONE_PROP_ENCOUNTER_NAME_REGISTRY
+// Does it also go for Chunk?
+struct PropEncounterNameRegistryLayerData {
+    uint32 propCount<hidden=true>;
+    LengthDefinedString propNames[propCount] <optimize=false>;
+};
+
+// ZONE_CAMERA_SEQUENCE
+struct CameraSequenceLayerData {
+    // WIP
+    uint cce_id;
+    byte unk1;
+    uint nameLen<hidden=true>;
+    char name[nameLen];
+    
+    Vec3f vec1;
+    Vec3f vec2;
+    Vec3f vec3;
+    Vec3f vec4;
+
+    ushort cameraNodesCount;
+    ushort cameraShotsCount;
+    ushort cameraShakesCount;
+    ushort cameraFadesCount;
+    ushort colorGradingsCount;
+    ushort npcsCount;
+    ushort dialogScriptsCount;
+    ushort soundEventsCount;
+    ushort pfxsCount;
+    ushort lightsCount;
+    
+    struct CameraNode {
+        uint nameLen<hidden=true>;
+        if (nameLen > 0)
+            char name[nameLen];
+        Vec3f vec1;
+        Vec3f vec2;
+        Vec3f vec3;
+        Vec3f vec4;
+    
+        uint unk1;
+        if (unk1 == 5) {
+            uint targetBone1Len<hidden=true>;
+            char targetBone1[targetBone1Len]; // guess
+            
+            DataUnkBytes data(18)<name="UnknownDataCameraNode_1">;
+            
+            uint targetBone2Len<hidden=true>;
+            char targetBone2[targetBone2Len]; // guess    
+            
+            DataUnkBytes data(30)<name="UnknownDataCameraNode_2">;
+           
+        }
+        else {
+            DataUnkBytes data(56)<name="UnknownDataCameraNode">;
+        }
+
+
+    };
+    if (cameraNodesCount > 0)
+        CameraNode cameraNodes[cameraNodesCount] <optimize=false>;
+
+    struct CameraShot {
+        uint nameLen<hidden=true>;
+        char name[nameLen];
+        DataUnkBytes data(33)<name="UnknownDataCameraShot">;
+    };
+    if (cameraShotsCount > 0)
+        CameraShot cameraShots[cameraShotsCount] <optimize=false>;
+    
+    struct CameraShake {
+        uint nameLen<hidden=true>;
+        char name[nameLen];
+        DataUnkBytes data(46)<name="UnknownDataCameraShake">;
+    };
+    if (cameraShakesCount > 0)
+        CameraShake cameraShakes[cameraShakesCount] <optimize=false>;
+    
+    struct CameraFade {
+        uint nameLen<hidden=true>;
+        char name[nameLen];
+        DataUnkBytes data(34)<name="UnknownDataCameraFade">;
+    };
+    if (cameraFadesCount > 0)
+        CameraFade cameraFades[cameraFadesCount] <optimize=false>;
+
+    // TODO: ColorGrading
+
+    // WIP: NPC
+    /*
+    struct NPC {
+       uint nameLen<hidden=true>;
+       char name[nameLen];
+
+       uint unk1;
+        
+       // not that sure about these vecs, mostly just stepping forward
+       Vec3f vec1;
+       Vec3f vec2;
+       Vec3f vec3;
+       Vec3f vec4;
+       
+       ushort unk2_MeshComponentRefCount;
+       struct unk_MeshComponentRef {
+         uint str1Len<hidden=true>;
+         char str1[str1Len];
+         DataUnkBytes data(4)<name="UnknownDataMeshComponentRef">;
+       };
+       unk_MeshComponentRef unk_MeshComponentRefs[unk2_MeshComponentRefCount] <optimize=false>;
+    
+       ushort unk3_MaybeContentFlags; // actions or something?
+       if (unk3_MaybeContentFlags > 0) {
+         if (unk3_MaybeContentFlags == 2) {
+            uint unk4;
+            ushort unk5;
+            ushort unk6;
+            ushort unk7;
+            ushort unk7_2;
+            float unk8;
+            ushort unk9;
+            uint str10Len;
+            char str10[str10Len];
+         }
+         else if (unk3_MaybeContentFlags == 4) {
+            uint unk4;
+            ushort unk5;
+            ushort unk6;
+            ushort unk7;
+            float unk8;
+            ushort unk9;
+            uint str10Len;
+            char str10[str10Len];
+         }
+       }
+       
+    };
+    if (npcsCount > 0) {
+        NPC npcs[npcsCount] <optimize=false>;
+    }
+    */
+    // TODO: DialogEvents
+    // TODO: SoundEvents
+    // TODO: PFXs
+    // TODO: Lights
+};
+
+// ZONE_TRANSFER_BOUNDS
+struct ZoneTransferBoundsLayerData {
+    // WIP
+    uint32 zoneID;
+    uint32 unk1;
+    // ...
+};
+
+
+
+
+
+
+
+
+// CHUNK_COLLISION
+//============================
+
+struct GeoVertData {
+    uint vertCount;
+    Vec3f verts[vertCount] <read=Vec3fDisplay>;
+};
+
+struct indiceType1 {
+    ushort a;
+    ushort b;  
+    ushort c;
+};
+
+struct indiceType2 {
+    byte a;
+    byte b;
+    byte c;
+};
+
+struct indiceBlock {
+    uint count;
+    uint indiceType;
+
+    if (indiceType == 393218) {
+        indiceType1 indices[count];
+    }
+    else if (indiceType == 196609) {
+        indiceType2 indices[count];
+    }
+    
+};
+
+struct matsDataBlock {
+    uint count;
+    uint id; // Might be type as well?
+    byte data[count];
+};
+
+struct moppDataBlock {
+    float floats[4];
+    uint size;
+    byte data[size];
+
+    byte unk1;
+    ushort unk2;
+
+    uint numShorts;
+    ushort shorts[numShorts];
+};
+
+struct CollisionGeometryLayerData(uint nodeSize) {
+    local uint startPos = FTell();    
+
+    uint magic;
+    ushort version; // ? should be 3
+    ushort revision; // ? checked if less than 5
+    uint id; // seems like a unique id
+
+    uint numPhysicsMatIds;
+    uint physicsMatIds[numPhysicsMatIds];
+    
+    if (revision == 2) {
+        struct GeoBlockStorage {
+            uint numVertBlocks;
+            if (numVertBlocks > 0)
+                GeoVertData vertBlocks[numVertBlocks] <optimize=false>;
+    
+            uint numIndiceBlocks;
+            if (numIndiceBlocks > 0)
+                indiceBlock indiceBlocks[numIndiceBlocks] <optimize=false>;
+    
+            uint numMatItems;
+            if (numMatItems > 0)
+                matsDataBlock matBlocks[numMatItems] <optimize=false>;
+    
+            uint numMoppBlocks;
+            if (numMoppBlocks > 0)
+                moppDataBlock moppBlocks[numMoppBlocks] <optimize=false>;
+        } store <read=GeoStoreDisplay>;
+    
+    }
+    
+    struct HavokData(uint havokSize) {
+        local uint havocEndPos = FTell()+havokSize;
+        uint64 havocBeginMagicTag;
+
+        // type section
+        local uint havocBeginPos = FTell();
+        local uchar havocEndClassesTag[4];
+        havocEndClassesTag[0] = 0x08;
+        havocEndClassesTag[1] = 0x0a;
+        havocEndClassesTag[2] = 0x40;
+        havocEndClassesTag[3] = 0x0e;
+
+        local uint havocClassesEndTagPos = FindFirst(havocEndClassesTag, true, false, 0, 0.0, 1, havocBeginPos);
+        byte havokClasses[havocClassesEndTagPos-havocBeginPos];
+        uint havokClassesEndTag;
+        // --
+
+        // data section 
+        // try to parse some data based on common patterns
+        local uchar havok04 = 0x04;
+        local uint havokNext04Pos = FindFirst(havok04, true, false, 0, 0.0, 1, FTell()+1);
+        byte havokUnk1[havokNext04Pos-FTell()+1];
+    
+        Vec4f havokVector1<read=Vec4Display>; // hkpListShape aabbHalfExtents?
+        Vec4f havokVector2<read=Vec4Display>; // hkpListShape aabbCenter?
+        
+        local uchar havocUnk2Tag[3];
+        havocUnk2Tag[0] = 0x18;
+        havocUnk2Tag[1] = 0x06;
+        havocUnk2Tag[2] = 0x02;
+        local uint havocUnk2TagPos = FindFirst(havocUnk2Tag, true, false, 0, 0.0, 1, FTell());
+        if ( havocEndPos > havocUnk2TagPos ) {
+ 
+            byte havokUnk2[havocUnk2TagPos - FTell()+3]; // the bytes before the last three are interesting, are they 2 bytes per combined shape?
+        
+            Matrix4x4 havokMatrix1<optimize=false>; // ?
+            Vec4f havokVector3<read=Vec4fDisplay>; // often similiar to the previous two vectors
+            Vec4f havokVector4<read=Vec4fDisplay>; // but not always
+    
+            if (store.numVertBlocks > 0) { // Protect against errors when guess mockering
+                local uchar havok08 = 0x08;
+                byte havokUnk_MaybeImportant[ FindFirst(havok08, true, false, 0, 0.0, 1, FTell()) - FTell() ];
+                byte havokUnk_ShouldBe8_1;
+                byte data_group1[ FindFirst(havok08, true, false, 0, 0.0, 1, FTell()+1) - FTell()];
+                byte havokUnk_ShouldBe8_2;
+                byte data_group2[ FindFirst(havok08, true, false, 0, 0.0, 1, FTell()+1) - FTell()];
+                byte havokUnk_ShouldBe8_3;    
+                
+                local uchar havokUnk3SearchSequence1[13];
+                havokUnk3SearchSequence1[0] = 0x06;
+                havokUnk3SearchSequence1[1] = 0x00;
+                havokUnk3SearchSequence1[2] = 0x00;
+                havokUnk3SearchSequence1[3] = 0x00;
+                havokUnk3SearchSequence1[4] = 0x00;
+                havokUnk3SearchSequence1[5] = 0x00;
+                havokUnk3SearchSequence1[6] = 0x00;
+                havokUnk3SearchSequence1[7] = 0x00;
+                havokUnk3SearchSequence1[8] = 0x00;
+                havokUnk3SearchSequence1[9] = 0x00;
+                havokUnk3SearchSequence1[10] = 0x00;
+                havokUnk3SearchSequence1[11] = 0x00;
+                havokUnk3SearchSequence1[12] = 0x00;
+
+                local uint sequence1Spill = 1;
+                local uint havokUnk3EndPos = FindFirst(havokUnk3SearchSequence1, true, false, 0, 0.0, 1, FTell());        
+                
+                if ( havocEndPos > havokUnk3EndPos ) {
+                    byte havokUnk3[havokUnk3EndPos - FTell() + sequence1Spill ];
+        
+                    byte havokUnk4[ 12 * sizeof(data_group1) ]; // always 0x00?
+                    struct transformMatrix {
+                        Vec4f translation<read=Vec4Display>;
+                        Vec4f rotation<read=Vec4Display>; // quaternion 
+                        Vec4f scale<read=Vec4Display>;
+                    };
+                    transformMatrix havokMatrix2[sizeof(data_group1)]<optimize=false>;
+                
+                    ushort unk4MaybeTagOrRef1;
+                    byte unk5;
+                }
+            }
+        }
+    };
+    
+    local uint havokSize = nodeSize - (FTell() - startPos);
+    if (revision == 2) {
+        HavokData havok(havokSize);
+    }
+
+    local uint endPos = FTell(); 
+    local uint leftSize = nodeSize - (endPos - startPos);
+    byte havokLeftData[leftSize];
+};
+
+string GeoStoreDisplay(GeoBlockStorage &store)
+{
+    string s;   
+    SPrintf( s, "Vert: %i, Indice: %i, Mat: %i, Mopp: %i", store.numVertBlocks, store.numIndiceBlocks, store.numMatItems, store.numMoppBlocks);
+    return s;
+}
+
+// CHUNK_SUBZONEGRID
+struct SubZoneGridData {
+    uint unk1; // maybe some sort of flags
+    uint unk2_gridsize; // 64
+    uint subzone_ids_count;
+    uint subzone_ids[subzone_ids_count];
+    uint unk4_gridcount;
+    byte grid_data[(unk2_gridsize*unk2_gridsize) * unk4_gridcount];
+};
+
+// CHUNK_VEGETATION2
+struct VegationChunk2Data {
+    Vec3f a;
+    uint unk1;
+    uint unk2;
+    struct unkVegData1 {
+        uint i;
+        float f;
+        
+    };
+    unkVegData1 unk3[unk1];
+    Vec3f b[unk1];
+};
+
+// CHUNK_GEOMETRY
+// CHUNK_GEOMETRY2
+struct GeometryTreeBlock(uint32 type) {
+    ushort count_entries; // Tied to chunk sections, eg high lod sub chunks have fewer entries per instance
+    
+    ushort const1; // "3"
+    uint const2;   // "8"
+    uint const3;   // "64"
+
+    struct GeometryTreeEntry(uint32 type) {
+        uint idx; // chunk node index
+        uint count1;
+        if (count1 > 0) {
+            struct count1Data(uint32 type) {
+                Vec3f min<read=Vec3fDisplay>;
+                Vec3f max<read=Vec3fDisplay>;
+                
+                if (type == CHUNK_GEOMETRY) {
+                    uint64 unkLong<format=hex>; // ?
+                }
+
+                uint count_inner;
+                if (count_inner > 0) {
+                    struct innerData(uint32 type) {
+                        uint materialId : 24; // 3 lowest bytes, .tmlt
+                        uint errorIfZero: 8; // 4th byte must not be zero
+
+                        uint textureId1; // optional .r5tex
+                        uint textureId2; // optional .r5tex
+                        uint textureId3; // optional .r5tex
+                        
+                        if (type == CHUNK_GEOMETRY2) {
+                            Vec3f center<read=Vec3fDisplay>; // ?
+                            float extrafloat; // ?
+                        }
+        
+                        Vec3f min<read=Vec3fDisplay>;
+                        Vec3f max<read=Vec3fDisplay>;
+                        
+                        ushort unk1_1;
+                        ushort unk1_2; // node/leaf count of some form
+                        uint unk2; // ? might ref count 2 data
+       
+                        uint transformCount;
+                        Matrix4x4 transform[transformCount]<optimize=false>;
+                        
+                        uint lz77_data1_num;
+                        uint lz77_data1_compressedSize;
+                        byte lz77_data1_uniqueIdx[lz77_data1_compressedSize]<comment="compressed">; // vgeo page/vert ref
+                        
+                        uint lz77_data2_num;
+                        uint lz77_data2_compressedSize;
+                        byte lz77_data2_xformIdx[lz77_data2_compressedSize]<comment="compressed">; // specifies which transform to use for a vertice
+            
+                        if (unk1_2 == 8) {
+                            uint lz77_data6_num;
+                            uint lz77_data6_compressedSize;
+                            byte lz77_data6[lz77_data6_compressedSize]<comment="compressed">; // maybe xformN
+                        }
+                        
+                        uint num; // 3*tris
+                        short lz77_data3_offset;
+                        uint lz77_data3_num;
+                        uint lz77_data3_compressedSize;
+                        if (lz77_data3_num > 0)
+                            byte lz77_data3_repeatIdx[lz77_data3_compressedSize]<comment="compressed">;
+        
+                        uint lz77_data4_num;
+                        uint lz77_data4_compressedSize;
+                        byte lz77_data4_vertIndex[lz77_data4_compressedSize]<comment="compressed">;
+                        
+                        uint lz77_data5_repTblNum; // num/3
+                        uint lz77_data5_compressedSize;
+                        byte lz77_data5_triangles[lz77_data5_compressedSize]<comment="compressed">; // specifies how to form triangles from vertices
+        
+                        uint unk10; // ? might ref count 2 data
+                    };
+                    innerData inner_data(type)[count_inner]<optimize=false>;
+                }
+            };
+            count1Data c1data(type)[count1]<optimize=false>;
+        }
+
+        uint count2;
+        if (count2 > 0) {
+            struct count2Data(uint32 type) {
+                float endtenfloats[10];
+
+                if (type == CHUNK_GEOMETRY) {
+                    uint64 unkLong<format=hex>; // ?
+                }
+                int unk1;
+                int unk2;
+            };
+            count2Data c2data(type)[count2]<optimize=false>;
+        }
+
+    };
+    GeometryTreeEntry entries(type)[count_entries]<optimize=false>;
+};
+
+// CHUNK_TERRAIN
+//============================
+struct TerrainChunk_type0 {
+    uint unk1;
+    uint unk2;
+    uint unk3;
+    Vec3f vec; 
+};
+
+struct TerrainChunk_type3 {
+    uint count;
+    uint data[count];
+};
+
+struct TerrainChunk_type4(uint nodeSize) {
+    uint nodeCount;
+    struct T4Node {
+        uint nodeIndex; // node index within a level
+        uint nodeLevel; // node.mLevel <= cTerrainMaxChunkNodeLevel
+        uint unk3; // flags?
+
+        Vec3f matrix[3] <read=Vec3fDisplay>;
+        float unk7;
+
+        Vec3f boundsMin <read=Vec3fDisplay>;
+        Vec3f boundsMax <read=Vec3fDisplay>;
+
+        uint unk9; // Number of vertices?
+        if (unk9 > 0) {
+            byte unk10[16]; // ?
+
+            uint unk11; // (unk15 * 3)
+            ushort unk12;
+    
+            uint unk14_count;
+            if (unk14_count != 0xffffffff) { // when node level is not 0?
+                ushort unk14[unk14_count];
+            }
+        
+            uint unk15; // Number of patch triangles?
+        }
+
+        byte haveMoreData;
+        if (haveMoreData > 0) {
+            uint materials[6]; // refmap?
+            uint unk18_size; // client will attempt to allocate this number of bytes
+        }
+    };
+    T4Node nodes[nodeCount] <read=T4NodeDisplay, optimize=false>;
+    
+    // this consumes all the bytes, but the divied up sections dont quite seem right when the count isn't 1
+    struct T4NodeData_1(uint unk9, uint unk11) {
+        byte sculpt_data[ 8 * (2 * unk9) ];
+        byte lighting_data[ 6 * (unk9) ];
+        byte data3[ (unk11 - 1) ];
+        byte data4[ (unk11 - 1) ];
+    };
+    struct T4NodeData_2(uint unk18_size) {
+        byte texturing_data[ unk18_size ]; 
+    };
+    local uint i;
+    for (i = 0; i < nodeCount; i++) {
+        if (nodes[i].unk9 > 0) {
+            T4NodeData_1 t4nd1(nodes[i].unk9, nodes[i].unk11) <optimize=false>;
+        }
+
+        if (exists(nodes[i].unk18_size)) {
+            T4NodeData_2 t4nd2(nodes[i].unk18_size) <optimize=false>;
+        }
+    }
+};
+string T4NodeDisplay(T4Node &node)
+{
+    string s;   
+    SPrintf( s, "Index: %i, Level: %i", node.nodeIndex, node.nodeLevel);
+    return s;
+}
+
+struct TerrainChunk_QuadTreeData(uint nodeSize) {
+    byte unk[8];
+};
+//============================
+
+// PROP_DOODAD
+struct DoodadLayerData {
+    uint32 prop_record_id;
+    Vec4f transform[4];
+    uint32 unk3;
+    uint32 unk4;
+    int32 unk5;
+    int32 unk6;
+    int32 unk7;
+    int32 unk8;
+    float unk9[5];
+};
+
+// PROP_LIGHTDATA
+struct PropNodeEntry_LightData {
+    byte header[64];
+    uint unk1;
+    float unk2[6];
+    uint unk4;
+};
+
+// PROP_AUDIOVOLUME
+struct PropNodeEntry_AudioVolume {
+    Vec4f floats1<read=Vec4fDisplay>;
+    Vec4f floats2<read=Vec4fDisplay>;
+    Vec4f floats3<read=Vec4fDisplay>;
+    uint unk1;
+    Vec4f floats4<read=Vec4fDisplay>;
+    byte last[9];
+};
+
+// PROP_DECALINSTANCES2
+struct PropNodeEntry_DecalInstances2 {
+    uint decal_id;
+    Matrix3x4 transform;
+    byte last[3];
+};
+
+// PROP_PARTICLEDATA
+struct PropNodeEntry_ParticleData {
+    uint unk1;
+    Vec4f a<read=Vec4fDisplay>;
+    Vec4f b<read=Vec4fDisplay>;
+    Vec4f c<read=Vec4fDisplay>;
+    Vec4f b<read=Vec4fDisplay>;
+    uint unk2;
+    byte last[20];
+};
+
+
+
+
+// ENVIRONMENT
+//============================
+
+// DEFAULT_ENVIRONMENT_10000
+struct DefaultEnvironment_10000_LayerData {
+    Vec3f a;
+    Vec3f b;
+};
+struct DefaultEnvironment_10000_LayerData_1710 {
+    Vec3f a;
+};
+
+// ENVIRONMENT_0033
+struct Environment_0033_LayerData {
+
+};
+
+// ENVIRONMENT_0034
+struct Environment_0034_LayerData {
+    // WIP
+    struct repeat1 {
+        float f1;
+        byte u[3];
+        float f2;
+    };
+    struct core {
+        uint a1;
+        uint a2;
+        repeat1 a3[a2];
+    
+        uint d1;
+        uint d2;
+        uint d3;
+        uint d4;
+    };
+    core test[3]<optimize=false>; // :thinking:
+};
+
+// ENVIRONMENT_0203
+struct Environment_0203_LayerData {
+    // WIP
+     struct p0203_data {
+        float f;
+        uint u;
+    };
+    struct p0203_main {
+        uint unk1;
+        uint count;
+        p0203_data data[count];
+    };
+
+    p0203_main test[3]<optimize=false>;
+};
+
+// ENVIRONMENT_0304
+struct Environment_0304_LayerData {
+    // WIP
+    struct p304_1 {
+        uint a;
+        uint b;
+        uint c;
+        float d;
+    };
+    p304_1 test[4];
+};
+
+// ENVIRONMENT_0401
+struct Environment_0401_LayerData {
+    // WIP
+    // Length 89
+    
+    Matrix4x4 transform; // This looks reasonable
+
+    // Rest is just guessing
+    Vec3f a; // 1.0, 0.5, 0.0?
+    Vec3f b;
+    byte last;
+};
+
+// ENVIRONMENT_0501
+struct Environment_0501_LayerData {
+
+};
+
+// ENVIRONMENT_0601
+struct Environment_0601_LayerData {
+    // WIP
+     struct p0601_data {
+        float f;
+        uint u;
+    };
+    struct p0601_main {
+        uint unk1;
+        uint count;
+        p0601_data data[count];
+    };
+
+    p0601_main test[5]<optimize=false>;
+};
+
+// ENVIRONMENT_0700
+struct Environment_0700_LayerData {
+
+};
+
+// ENVIRONMENT_0800
+struct Environment_0800_LayerData {
+
+};
+
+// ENVIRONMENT_0900
+struct Environment_0900_LayerData {
+
+};
+
+// ENVIRONMENT_1000
+struct Environment_1000_LayerData {
+    struct p1000_1 {
+        uint a;
+        uint b;
+        uint c;
+        float d;
+    };
+    p1000_1 test[2];
+};
+
+// ENVIRONMENT_1100
+struct Environment_1100_LayerData {
+
+};
+
+// ENVIRONMENT_1200
+struct Environment_1200_LayerData {
+    struct p1200_1 {
+        uint a;
+        uint b;
+        uint c;
+        float d;
+    };
+    p1200_1 test[5]<optimize=false>;
+};
+
+// ENVIRONMENT_1300
+struct Environment_1300_LayerData {
+    float data[7];
+    byte b;
+};
+/*
+struct DataU007LayerData {
+    float data[7];
+    uint16 data2;
+    float data3;
+};
+*/
+
+// ENVIRONMENT_1400
+struct Environment_1400_LayerData {
+    byte unk[4];
+};
+
+
+
+// ----
+
+
+// Main layer structure
+struct Layer;
+typedef struct (LayerType parentTypeId) {
+    // Parse layer header
+    local LayerType parentType<hidden=true> = parentTypeId;
+    uint64 magicTag<hidden=true>;
+    if (magicTag != NODE_TAG_MAGIC) {
+        Printf("Error, Layer magic missmatch");
+    }
+    LayerType typeId<format=hex>;
+    local string typeDisplayName = GetLayerTypeDisplayName(parentType, typeId);
+    uint32 length;
+    local uint64 layerContentStartPos<hidden=true> = FTell();
+    local uint64 layerContentEndPos<hidden=true> = layerContentStartPos + length;
+
+    // Prescan to find how much of our length that is data as opposed to children
+    local uint64 layerDataEndPos<hidden=true> = 0;
+    local uint64 nextLayerTagPos<hidden=true> = FindFirst(NODE_TAG_MAGIC, true, false, 0, 0.0, 1, layerContentStartPos);        
+    if (nextLayerTagPos == -1) {
+        // No next tag, so no more nodes
+        layerDataEndPos = layerContentEndPos;
+    }
+    else {
+        layerDataEndPos = nextLayerTagPos;
+    }
+    
+    // If there is layer data to parse
+    if (layerDataEndPos > layerContentStartPos) {
+        
+        // Handle per type data 
+       
+        // Terrain children separated to avoid ID conflicts
+        if (parentTypeId == CHUNK_TERRAIN) {
+            switch (typeId) {
+                case TERRAIN_T0:
+                    TerrainChunk_type0 data<optimize=false>;
+                    break;
+                case TERRAIN_QUADTREE:
+                    TerrainChunk_QuadTreeData data(length)<optimize=false>;
+                    break;
+                case TERRAIN_T3:
+                    TerrainChunk_type3 data<optimize=false>;
+                    break;
+                case TERRAIN_T4:
+                    TerrainChunk_type4 data(length)<optimize=false>;
+                    break;
+                default:
+                    break;
+            }
+        }
+        // Handle remaining independent of parent
+        else {
+            switch (typeId) {
+                case CHUNK:
+                    ChunkRootLayerData data;
+                    break;
+        
+                case CHUNK_LOD:
+                    ChunkLodLayerData data;
+                    break;
+        
+                case CHUNK_SUBCHUNK:
+                    ChunkSubChunkLayerData data;
+                    break;
+        
+                case ZONE_WATER:
+                    WaterLayerData data;
+                    break;
+        
+                case CHUNK_WATER:
+                    WaterLayerData data;
+                    break;
+        
+                case WATER_CHILD:
+                    WaterChildLayerData data(layerContentEndPos);
+                    break;
+        
+                case ZONE_SKYBOX:
+                    SkyBoxRecordLayerData data;
+                    break;
+                
+                case MELDING_PERIMITER:
+                    MeldingPerimiterSetLayerData data;
+                    break;
+        
+                case ZONE_PATH:
+                    PathLayerData data;
+                    break;
+        
+                case CHUNK_INFO_RANGE:
+                    ChunkZoneRangeLayerData data;
+                    break;
+        
+                case CHUNK_INFO_REF:
+                    ChunkRefLayerData data;
+                    break;
+        
+                case CHUNK_INFO_REF2:
+                    ChunkRef2LayerData data;
+                    break;
+        
+                case ZONE_CAMERA_SEQUENCE:
+                    CameraSequenceLayerData data;
+                    break;
+                
+                case ZONE_TRANSFER_BOUNDS:
+                    ZoneTransferBoundsLayerData data;
+                    break;
+        
+                case ZONE_PROP_ENCOUNTER_NAME_REGISTRY:
+                    PropEncounterNameRegistryLayerData data;
+                    break;
+       
+                case ZONE_135168:
+                    Zone_135168_LayerData data;
+                    break;
+        
+                case DEFAULT_ENVIRONMENT_10000:
+                    if (length > 12) {
+                        DefaultEnvironment_10000_LayerData data;
+                    }
+                    else {
+                        DefaultEnvironment_10000_LayerData_1710 data;
+                    }
+                    break;
+        
+                case CHUNK_COLLISION1:
+                    CollisionGeometryLayerData data(length);
+                    break;
+                case CHUNK_COLLISION2:
+                    CollisionGeometryLayerData data(length);
+                    break;
+                case CHUNK_COLLISION3:
+                    CollisionGeometryLayerData data(length);
+                    break;
+                case ZONE_WORLD_CHUNK_IMPORT:
+                    CollisionGeometryLayerData data(length);
+                    break;
+                
+                case CHUNK_GEOMETRY:
+                    GeometryTreeBlock data(typeId);
+                    break;
+
+                case CHUNK_GEOMETRY2:
+                    GeometryTreeBlock data(typeId);
+                    break;
+
+                case CHUNK_SUBZONEGRID:
+                    SubZoneGridData data;
+                    break;
+
+                case CHUNK_VEGETATION2:
+                    // VegationChunk2Data data;
+                    break;
+                
+                case PROP_DOODAD:
+                    DoodadLayerData data;
+                    break;                
+
+                case PROP_LIGHTDATA:
+                    PropNodeEntry_LightData data;
+                    break;
+
+                case PROP_AUDIOVOLUME:
+                    PropNodeEntry_AudioVolume data;
+                    break;
+
+                case PROP_DECALINSTANCES2:
+                    PropNodeEntry_DecalInstances2 data;
+                    break;
+
+                case PROP_PARTICLEDATA:
+                    PropNodeEntry_ParticleData data;
+                    break;
+                
+                case ENVIRONMENT_0033:
+                    Environment_0033_LayerData data;
+                    break;
+
+                case ENVIRONMENT_0034:
+                    Environment_0034_LayerData data;
+                    break;
+
+                case ENVIRONMENT_0203:
+                    Environment_0203_LayerData data;
+                    break;
+
+                case ENVIRONMENT_0304:
+                    Environment_0304_LayerData data;
+                    break;
+
+                case ENVIRONMENT_0401:
+                    Environment_0401_LayerData data;
+                    break;
+
+                case ENVIRONMENT_0501:
+                    Environment_0501_LayerData data;
+                    break;
+
+                case ENVIRONMENT_0601:
+                    Environment_0601_LayerData data;
+                    break;
+
+                case ENVIRONMENT_0700:
+                    Environment_0700_LayerData data;
+                    break;
+
+                case ENVIRONMENT_0800:
+                    Environment_0800_LayerData data;
+                    break;
+
+                case ENVIRONMENT_0900:
+                    Environment_0900_LayerData data;
+                    break;
+
+                case ENVIRONMENT_1000:
+                    Environment_1000_LayerData data;
+                    break;
+
+                case ENVIRONMENT_1100:
+                    Environment_1100_LayerData data;
+                    break;
+
+                case ENVIRONMENT_1200:
+                    Environment_1200_LayerData data;
+                    break;
+
+                case ENVIRONMENT_1300:
+                    Environment_1300_LayerData data;
+                    break;
+
+                case ENVIRONMENT_1400:
+                    Environment_1400_LayerData data;
+                    break;
+
+                default:
+                    break;
+            }
+        }
+
+
+        
+    }
+
+    // Ensure that we have parsed all the data of the layer before parsing children
+    local uint64 finishedParsingDataPos<hidden=true> = FTell();
+    if (finishedParsingDataPos != layerContentEndPos) {
+        if (finishedParsingDataPos > layerContentEndPos) {
+            Printf("Error, parsed beyond Layer length");
+        }
+
+        // Determine how much we have left based on next node or end of file.
+        local uint64 remaining<hidden=true> = 0;
+        if (nextLayerTagPos == -1) {
+            // No next tag, so no more nodes
+            remaining = FileSize() - finishedParsingDataPos;
+        }
+        else if (finishedParsingDataPos != nextLayerTagPos) {
+            // We are not at the next node, so we must not have finished parsing all the data
+            remaining = nextLayerTagPos - finishedParsingDataPos;
+        }
+        if (remaining > 0) {
+            byte unparsedData[remaining];
+        }
+    }
+
+    // Parse children if we have remaining content
+    local uint64 postParsingDataPos<hidden=true> = FTell();
+    if (postParsingDataPos != layerContentEndPos) {
+        while( FTell() < layerContentEndPos ) {
+            Layer child(typeId);
+        }
+    }
+} Layer<read=LayerDisplay>;
+
+string GetLayerTypeDisplayName(LayerType parent, LayerType typeId) {
+    local string v = EnumToString(typeId);
+    
+    // Collision on id 0
+    if (parent == TERRAIN_QUADTREE_BLENDWEIGHT && typeId == TERRAIN_QUADTREE_BLENDWEIGHT_0) {
+        v = "TERRAIN_QUADTREE_BLENDWEIGHT_0";
+    }
+    else if (parent == CHUNK_TERRAIN && typeId == TERRAIN_T0) {
+        v = "TERRAIN_T0";
+    }
+    
+    // Collision on id 4
+    if (parent == CHUNK_TERRAIN && typeId == TERRAIN_T4) {
+        v = "TERRAIN_T4";
+    }
+    else if (parent == ZONE_WATER && typeId == WATER_CHILD) {
+        v = "WATER_CHILD";
+    }
+
+    // Collision on id 5
+    if (parent == ZONE_MELDING && typeId == MELDING_PERIMITER) {
+        v = "MELDING_PERIMITER";
+    }
+    else if (parent == TERRAIN_MATERIALS && typeId == TERRAIN_MATERIAL) {
+        v = "TERRAIN_MATERIAL";
+    }    
+
+    return v;
+}
+
+string LayerDisplay(Layer &layer)
+{
+    string s;
+    string v = GetLayerTypeDisplayName(layer.parentType, layer.typeId);
+    SPrintf( s, "%s", v);
+    return s;
+}
+
+#endif

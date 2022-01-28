@@ -1,0 +1,76 @@
+//------------------------------------------------
+//--- 010 Editor Binary Template
+//
+//      File: Common structs and types for reuse
+//   Authors: 
+//  Category: Firefall
+// File Mask: 
+//  ID Bytes: 
+//------------------------------------------------
+
+#ifndef FF_COMMON_TYPES
+#define FF_COMMON_TYPES 1
+
+typedef struct
+{
+    float x;
+    float y;
+} Vec2f <read=Vec2fDisplay>;
+string Vec2fDisplay(Vec2f &vec)
+{
+    string s;   
+    SPrintf( s, "%f, %f", vec.x, vec.y );
+    return s;
+}
+
+typedef struct {
+    float x;
+    float y;
+    float z;
+} Vec3f <read=Vec3fDisplay>;
+string Vec3fDisplay(Vec3f &vec)
+{
+    string s;   
+    SPrintf( s, "%f, %f, %f", vec.x, vec.y, vec.z );
+    return s;
+}
+
+typedef struct {
+    float x;
+    float y;
+    float z;
+    float w;
+} Vec4f <read=Vec4fDisplay>;
+string Vec4fDisplay(Vec4f &vec)
+{
+    string s;   
+    SPrintf( s, "%f, %f, %f, %f", vec.x, vec.y, vec.z, vec.w );
+    return s;
+}
+
+typedef struct {
+    Vec4f a<read=Vec4fDisplay, optimize=false>;
+    Vec4f b<read=Vec4fDisplay, optimize=false>;
+    Vec4f c<read=Vec4fDisplay, optimize=false>;
+    Vec4f d<read=Vec4fDisplay, optimize=false>;
+} Matrix4x4;
+
+typedef struct {
+    Vec3f a<read=Vec3fDisplay, optimize=false>;
+    Vec3f b<read=Vec3fDisplay, optimize=false>;
+    Vec3f c<read=Vec3fDisplay, optimize=false>;
+} Matrix3x3;
+
+typedef struct {
+    Vec3f a<read=Vec3fDisplay, optimize=false>;
+    Vec3f b<read=Vec3fDisplay, optimize=false>;
+    Vec3f c<read=Vec3fDisplay, optimize=false>;
+    Vec3f d<read=Vec3fDisplay, optimize=false>;
+} Matrix3x4;
+
+typedef struct {
+    uint32 len;
+    char str[len];
+} LengthDefinedString;
+
+#endif
