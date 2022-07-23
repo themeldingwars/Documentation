@@ -1,0 +1,63 @@
+//------------------------------------------------
+//--- 010 Editor Binary Template
+//
+//      File: .dw
+//   Authors: Xsear
+//  Category: Firefall
+// File Mask: *.dw
+//  ID Bytes: 
+//------------------------------------------------
+
+#include "_common_types.bt";
+
+struct HEADER {
+    byte bitfield[4]<comment="Changes depending on the debugweapon 0-10 value">;
+    byte maxSize<comment="debugweapon.maxSize">;
+};
+
+struct TRACE {
+    byte unk1[6];
+    uint ammoTypeId;
+    byte unk2[4];
+    Vec3f rayStart;
+    Vec3f rayEnd;
+    float weaponRange;
+    uint uint2;
+    Vec4f vec4_1;
+    Vec4f vec4_2;
+    byte unk3[8];
+    Vec3f vec3_3;
+    uint uintarr1[4];
+    Vec3f vec3_4;
+    uint weaponTemplateId;
+    byte unk4[4];
+    byte unk5[8];
+    byte unk6[16];
+    Vec3f rayStart2;
+    Vec3f rayEnd2;
+
+    // probably start of another thing
+    // this is likely the hit marker on the ground
+    byte b_bitfield[4];
+    byte b_unk_a[9];
+    byte b_unk_b[4];
+    Vec3f b_origin;
+    Vec3f b_direction;
+    byte b_unk_last[7];
+};
+
+struct FOOTER {
+    byte leaky[(FileSize()-FTell()-4)]<comment="Only present when we dont have a full set of traces, shrinks for every trace added.">;
+    uint lastTraceCounter<comment="The value loops around when you exceed the maximum amount of traces. Zero if no traces.">;
+};
+
+struct FILE {
+    HEADER hdr<name="Header">;    
+
+    // Parse traces if there are enough bytes remaining.
+    while (FTell() < ( FileSize() - 218 - 4)) {
+        TRACE t;
+    }
+   
+    FOOTER ftr<name="Footer">;
+} debugweapon;
