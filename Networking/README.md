@@ -93,6 +93,26 @@ Partially documented Web APIs as OpenAPI specification:
 | GET    | /api/v3/trade/products/workbench                                    | ❌     | ❌     | ❌      | 1869  |
 | POST   | /api/v3/ui_actions                                                  | ❌     | ❌     | ❌      | 1869  |
 
+### Market
+
+| Method | Endpoint                          | Listed | Request | Response | Build |
+|--------|-----------------------------------|--------|---------|----------|-------|
+| POST   | /api/v1/buy/[id]                  | ✔️     | ❌     | ❌      | 1679  |
+| GET    | /api/v1/item_display_attributes   | ✔️     | ✔️     | ✔️      | 1679  |
+| POST   | /api/v1/listings/[id]/cancel      | ✔️     | ❌     | ❌      | 1679  |
+| POST   | /api/v1/listings/[id]/reap        | ✔️     | ❌     | ❌      | 1679  |
+| GET    | /api/v1/market_categories         | ✔️     | ✔️     | ✔️      | 1679  |
+| GET    | /api/v1/my_listings               | ✔️     | ❌     | ❌      | 1679  |
+| GET    | /api/v1/resources/stat_names      | ✔️     | ❌     | ❌      | 1679  |
+| GET    | /api/v1/resources/[id]/stat_names | ✔️     | ❌     | ❌      | 1679  |
+| GET    | /api/v1/search                    | ✔️     | ❌     | ❌      | 1679  |
+| POST   | /api/v1/sell_item                 | ✔️     | ❌     | ❌      | 1679  |
+| POST   | /api/v1/sell_resource             | ✔️     | ❌     | ❌      | 1679  |
+| POST   | /ingame/buy                       | ✔️     | ❌     | ❌      | 1679  |
+| POST   | /ingame/sell                      | ✔️     | ❌     | ❌      | 1679  |
+| GET    | /items                            | ✔️     | ❌     | ❌      | 1679  |
+| GET    | /resources                        | ✔️     | ❌     | ❌      | 1679  |
+
 ### Launcher
 
 | Method | Endpoint                        | Listed | Request | Response | Build |

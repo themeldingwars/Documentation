@@ -1,4 +1,4 @@
-openapi: 3.0.1
+openapi: 3.0.3
 info:
   title: Firefall Web API
   description: All the web based Firefall API endpoints.
@@ -38,8 +38,8 @@ paths:
           description: Firefall environment for which to retrieve the hostnames for
           examples:
             betas:
-              summary: Example value for the beta environment
-              value: 'betas'
+              summary: Example value for the prod environment
+              value: 'prod'
         - in: query
           name: build
           schema:
@@ -49,7 +49,7 @@ paths:
           examples:
             build:
               summary: Example value of one of the latest builds
-              value: 1973
+              value: 1962
       responses:
         200:
           description: Success
@@ -57,6 +57,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Hostnames'
+
   /login_alerts:
     get:
       tags:
@@ -69,6 +70,7 @@ paths:
             text/html:
               schema:
                 type: string
+
   /api/v1/oracle/ticket:
     post:
       tags:
@@ -209,6 +211,342 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CharacterList'
+
+  /api/v1/buy/{itemId}:
+    post:
+      tags:
+        - market
+        - Missing Example
+      summary: WIP [1679] Buy an item from the market
+      parameters:
+        - in: header
+          name: X-Red5-Signature
+          schema:
+            $ref: '#/components/schemas/Signature'
+          required: true
+          description: Red5 Security Signature Header
+        - in: path
+          name: itemId
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: string
+  /api/v1/item_display_attributes:
+    get:
+      tags:
+        - market
+      summary: WIP [1679] Retrieve all the available attributes for displaying
+      parameters:
+        - in: header
+          name: X-Red5-Signature
+          schema:
+            $ref: '#/components/schemas/Signature'
+          required: true
+          description: Red5 Security Signature Header
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemDisplayAttributes'
+  /api/v1/listings/{itemId}/cancel:
+    post:
+      tags:
+        - market
+        - Missing Example
+      summary: WIP [1679] Cancel the listening of an item
+      parameters:
+        - in: header
+          name: X-Red5-Signature
+          schema:
+            $ref: '#/components/schemas/Signature'
+          required: true
+          description: Red5 Security Signature Header
+        - in: path
+          name: itemId
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: string
+  /api/v1/listings/{itemId}/reap:
+    post:
+      tags:
+        - market
+        - Missing Example
+      summary: WIP [1679] Collect the earnings of sold and previously listed item
+      parameters:
+        - in: header
+          name: X-Red5-Signature
+          schema:
+            $ref: '#/components/schemas/Signature'
+          required: true
+          description: Red5 Security Signature Header
+        - in: path
+          name: itemId
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: string
+  /api/v1/market_categories:
+    get:
+      tags:
+        - market
+        - Missing Example
+      summary: WIP [1679] Retrieve the available market categories
+      parameters:
+        - in: header
+          name: X-Red5-Signature
+          schema:
+            $ref: '#/components/schemas/Signature'
+          required: true
+          description: Red5 Security Signature Header
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarketCategories'
+  /api/v1/my_listings:
+    get:
+      tags:
+        - market
+        - Missing Example
+      summary: WIP [1679] Retrieve current listings of an account
+      parameters:
+        - in: header
+          name: X-Red5-Signature
+          schema:
+            $ref: '#/components/schemas/Signature'
+          required: true
+          description: Red5 Security Signature Header
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: string
+  /api/v1/resources/stat_names:
+    get:
+      tags:
+        - market
+        - Missing Example
+      summary: WIP [1679] Retrieve stat names for all resources?
+      parameters:
+        - in: header
+          name: X-Red5-Signature
+          schema:
+            $ref: '#/components/schemas/Signature'
+          required: true
+          description: Red5 Security Signature Header
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: string
+  /api/v1/resources/{resourceId}/stat_names:
+    get:
+      tags:
+        - market
+        - Missing Example
+      summary: WIP [1679] Retrieve stat names for a specific resource
+      parameters:
+        - in: header
+          name: X-Red5-Signature
+          schema:
+            $ref: '#/components/schemas/Signature'
+          required: true
+          description: Red5 Security Signature Header
+        - in: path
+          name: resourceId
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: string
+  /api/v1/search:
+    get:
+      tags:
+        - market
+        - Missing Example
+      summary: WIP [1679] Search for availalbe items and resources on the market
+      parameters:
+        - in: header
+          name: X-Red5-Signature
+          schema:
+            $ref: '#/components/schemas/Signature'
+          required: true
+          description: Red5 Security Signature Header
+        - in: query
+          name: query
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+        - in: query
+          name: perPage
+          required: false
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: string
+  /api/v1/sell_item:
+    post:
+      tags:
+        - market
+        - Missing Example
+      summary: WIP [1679] Sell an item on the market
+      parameters:
+        - in: header
+          name: X-Red5-Signature
+          schema:
+            $ref: '#/components/schemas/Signature'
+          required: true
+          description: Red5 Security Signature Header
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: string
+  /api/v1/sell_resource:
+    post:
+      tags:
+        - market
+        - Missing Example
+      summary: WIP [1679] Sell a resource on the market
+      parameters:
+        - in: header
+          name: X-Red5-Signature
+          schema:
+            $ref: '#/components/schemas/Signature'
+          required: true
+          description: Red5 Security Signature Header
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: string
+  /ingame/buy:
+    post:
+      tags:
+        - market
+        - Missing Example
+      summary: WIP [1679] Buy an item from the market
+      parameters:
+        - in: header
+          name: X-Red5-Signature
+          schema:
+            $ref: '#/components/schemas/Signature'
+          required: true
+          description: Red5 Security Signature Header
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: string
+  /ingame/sell:
+    post:
+      tags:
+        - market
+        - Missing Example
+      summary: WIP [1679] Sell an item on the market
+      parameters:
+        - in: header
+          name: X-Red5-Signature
+          schema:
+            $ref: '#/components/schemas/Signature'
+          required: true
+          description: Red5 Security Signature Header
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: string
+  /items:
+    get:
+      tags:
+        - market
+        - Missing Example
+      summary: WIP [1679] Get all items of the account
+      parameters:
+        - in: header
+          name: X-Red5-Signature
+          schema:
+            $ref: '#/components/schemas/Signature'
+          required: true
+          description: Red5 Security Signature Header
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: string
+  /resources:
+    get:
+      tags:
+        - market
+        - Missing Example
+      summary: WIP [1679] Get all available resources of the account
+      parameters:
+        - in: header
+          name: X-Red5-Signature
+          schema:
+            $ref: '#/components/schemas/Signature'
+          required: true
+          description: Red5 Security Signature Header
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: string
+
   /launcher:
     get:
       tags:
@@ -223,6 +561,57 @@ paths:
                 $ref: '#/components/schemas/Launcher'
 components:
   schemas:
+    MarketCategories:
+      type: array
+      items:
+        $ref: '#/components/schemas/MarketCategory'
+    MarketCategory:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        parent_id:
+          type: integer
+      example:
+        id: 15
+        name: "Resource"
+        parent_id: 0
+    ItemDisplayAttributes:
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/ItemDisplayAttribute'
+      example:
+        turret_mode_accuracy_bonus_mod1:
+          data_type: 1
+          format: "%.2f accuracy modifier"
+          internal_name: "turret_mode_accuracy_bonus_mod1"
+          inverted: 1
+          name: "Turret Mode Accuracy Bonus"
+          type: 1
+    ItemDisplayAttribute:
+      type: object
+      properties:
+        data_type:
+          type: integer
+        format:
+          type: string
+        internal_name:
+          type: string
+        inverted:
+          type: integer
+        name:
+          type: string
+        type:
+          type: integer
+      example:
+        data_type: 1
+        format: "%.2f accuracy modifier"
+        internal_name: "turret_mode_accuracy_bonus_mod1"
+        inverted: 1
+        name: "Turret Mode Accuracy Bonus"
+        type: 1
     Launcher:
       type: object
       properties:
