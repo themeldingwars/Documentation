@@ -12,12 +12,58 @@
 
 struct HEADER {
     byte bitfield[4]<comment="Changes depending on the debugweapon 0-10 value">;
-    byte maxSize<comment="debugweapon.maxSize">;
 };
 
-struct TRACE {
-    byte unk1[6];
-    uint ammoTypeId;
+enum <byte> DEBUG_TRACE_TYPE
+{
+    ERROR = 0,
+    Spawn = 1,
+    Bounce = 2,
+    Posefile_Hit = 3,
+    Ragdoll_Hit = 4,
+    Ragdoll_Miss = 5,
+    Impact = 6,
+    Shot = 7,
+    Detonate = 8,
+    Timeout = 9,
+    Validated = 10
+};
+
+struct TookDebugWeaponHit_Optional_1 {
+    uint64 guid;
+    Vec3f unk2;
+    Vec4f unk3_quaternion;
+    byte unk4; // sbyte
+    byte unk5;
+};
+
+struct TookDebugWeaponHit_Optional_2 {
+    uint64 guid;
+    byte unk2_count;
+    Matrix4x4 unk2[unk2_count];
+};
+
+struct TookDebugWeaponHit {
+    DEBUG_TRACE_TYPE type;
+    uint unk2_traceId;
+    uint time;
+    ushort unk4;
+    Vec3f Position;
+    Vec3f Direction;
+    uint unk7_id;
+
+    byte have_unk8;
+    if (have_unk8) {
+        TookDebugWeaponHit_Optional_1 unk8;
+    }
+
+    byte have_unk9;
+    if (have_unk9) {
+        TookDebugWeaponHit_Optional_2 unk9;
+    }
+};
+
+struct TRACE_MOVEMENT_DATA {
     byte unk2[4];
     Vec3f rayStart;
     Vec3f rayEnd;
@@ -25,39 +71,58 @@ struct TRACE {
     uint uint2;
     Vec4f vec4_1;
     Vec4f vec4_2;
-    byte unk3[8];
+    float unk3_1;
+    float unk3_2;
     Vec3f vec3_3;
-    uint uintarr1[4];
+    uint unk4;
     Vec3f vec3_4;
+    Vec3f vec3_5;
     uint weaponTemplateId;
-    byte unk4[4];
-    byte unk5[8];
-    byte unk6[16];
-    Vec3f rayStart2;
-    Vec3f rayEnd2;
+    uint unk5;
+    byte unk6[12];
+};
 
-    // probably start of another thing
-    // this is likely the hit marker on the ground
-    byte b_bitfield[4];
-    byte b_unk_a[9];
-    byte b_unk_b[4];
-    Vec3f b_origin;
-    Vec3f b_direction;
-    byte b_unk_last[7];
+struct TRACE {
+    byte outerByte;
+    if (outerByte == 1) {
+        byte innerByte;
+        uint unk_traceId;
+        uint ammoTypeId;
+        if (ammoTypeId != 0) {
+            TRACE_MOVEMENT_DATA blob; // 0x88
+        };
+        
+        local int ivar3<hidden=true> = 2;
+        do {
+            byte debugWeaponHitDataCount;
+            if (debugWeaponHitDataCount != 0) {
+                local byte debugWeaponHitDataCounter<hidden=true> = debugWeaponHitDataCount;
+                do {
+                    TookDebugWeaponHit tdbwh;
+                    debugWeaponHitDataCounter--;
+                }
+                while (debugWeaponHitDataCounter != 0);
+            }
+             
+            ivar3--;
+        }
+        while (ivar3 != 0);
+    };
+};
+
+struct FILE_DATA {
+    byte maxSize<comment="debugweapon.maxSize">;
+    while (FTell() < ( FileSize() - 4)) {
+        TRACE t<optimize=false>;
+    }
 };
 
 struct FOOTER {
-    byte leaky[(FileSize()-FTell()-4)]<comment="Only present when we dont have a full set of traces, shrinks for every trace added.">;
     uint lastTraceCounter<comment="The value loops around when you exceed the maximum amount of traces. Zero if no traces.">;
 };
 
 struct FILE {
-    HEADER hdr<name="Header">;    
-
-    // Parse traces if there are enough bytes remaining.
-    while (FTell() < ( FileSize() - 218 - 4)) {
-        TRACE t;
-    }
-   
+    HEADER hdr<name="Header">;
+    FILE_DATA dat<name="Traces">;
     FOOTER ftr<name="Footer">;
 } debugweapon;
