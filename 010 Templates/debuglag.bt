@@ -1,0 +1,220 @@
+//------------------------------------------------
+//--- 010 Editor Binary Template
+//
+//      File: .dlag
+//   Authors: Xsear
+//  Category: Firefall
+// File Mask: *.dlag
+//  ID Bytes: 
+//------------------------------------------------
+
+#include "_common_types.bt";
+
+local const byte MAX_NUM_MEASUREMENTS<hidden=true> = 72; // 71 in 1946
+typedef enum <uint32> {
+    // 0
+    Client_Frame = 1,
+    Server_Frame = 2,
+    Server_Update_Rate = 3,
+    Local_Gateway = 4,
+    Local_Gateway_dropped = 5,
+    The_Internets = 6,
+    The_Internets_dropped = 7,
+    Socket_RTT = 8,
+    
+    // 1
+    Packet_Downloss = 9,
+    Packet_Upploss = 10,
+    Client_Application_Ping = 11,
+    Server_Application_Ping = 12,
+    Server_Player_Input_Delay = 13,
+    Server_PInput_Delay_Sample = 14,
+    Gameplay_Buffering = 15,
+    Client_Lateness = 16,
+    
+    // 2
+    Server_Lateness = 17,
+    Probed_MTU = 18,
+    Game_Messages_Sent = 19,
+    Game_Messages_Received = 20,
+    Game_Bytes_Sent = 21,
+    Game_Bytes_Received = 22,
+    Game_Compression_Ratio = 23,
+    Game_Packets_Second = 24,
+
+    // 3
+    Game_Bytes_Second = 25,
+    Game_Shaped_Bytes = 26,
+    Client_Source = 27,
+    Matrix_Upstream = 28,
+    GSS_Received = 29,
+    GSS_Object_Processed = 30,
+    Matrix_Downstream = 31,
+    Client_Final = 32,
+    
+    // 4
+    Simulated_Objects = 33,
+    Update_Starved_Maximum = 34,
+    Update_Starved_Average = 35,
+    Late_Update_Maximum = 36,
+    Late_Update_Average = 37,
+    Update_Requests = 38,
+    Rejected_Update_Requests = 39,
+    Reordered_Objects = 40,
+
+    // 5
+    Priority_Inversions = 41,
+    Dropped_Priority_Updates = 42,
+    Simulation_Duration = 43,
+    Total_Objects = 44,
+    Matrix_Frame = 45,
+    Matrix_Update_Duration = 46,
+    Keyframes_Requested = 47,
+    Keyframes_Queued = 48,
+
+    // 6
+    Keyframe_Delay = 49,
+    Matrix_Bytes_Second = 50,
+    Batching_Delay = 51,
+    Total_Budget = 52,
+    Keyframes_Budget = 53,
+    Reserved_Budget = 54,
+    Unreliable_Budget = 55,
+    Raia_Frame = 56,
+
+    // 7
+    Raia_Update_Duration = 57,
+    Updated_Objects = 58,
+    Total_Objects_2 = 59,
+    VT_Used_Bandwidth = 60,
+    Movement_Confirmed_Period = 61,
+    Movement_Validations = 62,
+    Movement_Simulation_Time = 63,
+    Movement_Correction_Length = 64,
+    
+    // 8
+    Remote_Extrapolation_Time = 65,
+    Remote_Extrapolation_Length = 66,
+    Clock_Smoothing_Delta = 67,
+    Clock_Gameplay_Delta = 68,
+    Last_Send = 69,
+    Last_Received = 70,
+    Rate = 71,
+    MPH = 72,
+
+    // 9
+    RPM = 73,
+} MeasurementIndex;
+
+struct GRAPH_STATE_DATA {
+    ushort measurementsCount;
+    byte visibleMeasurements[((measurementsCount >> 6) + 1) << 3]<comment="Controls which measurements are visible in the graph when you debuglag_import.">;
+    Vec4f offset;
+    Vec4f scale;
+    byte printTitles;
+    byte unk;
+};
+struct GRAPH_STATE_ARR_CONT(ubyte count) {
+    GRAPH_STATE_DATA data[count]<optimize=false>;
+};
+struct GRAPH_STATE_ARR {
+    do {
+        ubyte count;
+        if (count > 0) {
+            GRAPH_STATE_ARR_CONT data(count);
+        }
+    } while (count == 0xFF);
+};
+
+struct MEASUREMENT_DATA {
+    float value;
+    uint time;
+    uint unk;
+};
+struct MEASUREMENT_DATA_ARR_CONT(ubyte count) {
+    MEASUREMENT_DATA data[count]<optimize=false>;
+};
+struct MEASUREMENT_DATA_ARR {
+    do {
+        ubyte count;
+        if (count > 0) {
+            MEASUREMENT_DATA_ARR_CONT data(count);
+        }
+    } while (count == 0xFF);
+};
+
+struct MEASUREMENT (MeasurementIndex typeHelper) {
+    local MeasurementIndex measurement<hidden=true> = typeHelper;
+    uint totalCount;
+    MEASUREMENT_DATA_ARR data;
+};
+struct MEASUREMENT_PARSER {
+    uint count;
+    local uint counter<hidden=true>;
+    local MeasurementIndex typeHelper<hidden=true>;
+    if (count != 0) {
+        do {
+            if (MAX_NUM_MEASUREMENTS < counter) break;
+            typeHelper = counter+1;
+            MEASUREMENT m(typeHelper)<read=MeasurementDisplay>;
+            counter++;
+        } while (counter < count);
+    }
+};
+
+struct DAT4 (MeasurementIndex typeHelper) {
+    local MeasurementIndex measurement<hidden=true> = typeHelper;
+    byte var4_1[4];
+    MEASUREMENT_DATA_ARR data;
+    string var4_3;
+    byte var4_4;
+    uint var4_5;
+    float var4_6;
+    float var4_7;
+    float var4_8;
+    float var4_9;
+    byte var4_10;
+};
+struct DAT4_PARSER {
+    local uint counter<hidden=true>;
+    local MeasurementIndex typeHelper<hidden=true>;
+    while (FTell() < ( FileSize() )) {
+        typeHelper = counter+1;
+        DAT4 dat4_data(typeHelper)<optimize=false>; // ,read=Dat4Display
+        counter++;
+    }
+};
+
+struct FILE {
+    uint time<comment="Similar to measurement time">;
+    MEASUREMENT_PARSER measurementData<comment="Main graph sample data">;
+    GRAPH_STATE_ARR graphState<comment="Optional, does not show up on default debuglag 1">;
+    string tracerouteHost<comment="Set if debuglag.traceroute is enabled">;
+    DAT4_PARSER data4<comment="?">;
+} debuglag;
+
+string MeasurementIndexToString (MeasurementIndex index) {
+    string v = EnumToString(index);
+    if (v == "") {
+        v = "UNKNOWN_MEASUREMENT";
+    }
+    return v;
+};
+
+string MeasurementDisplay(MEASUREMENT &a)
+{
+    string s;
+    string v = MeasurementIndexToString(a.measurement);
+    SPrintf( s, "%s x%d", v, a.totalCount);
+    return s;
+};
+
+/*
+string Dat4Display(DAT4 &a)
+{
+    string s;
+    string v = MeasurementIndexToString(a.measurement);
+    SPrintf( s, "%s", v);
+    return s;
+};
+*/
