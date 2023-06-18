@@ -1,0 +1,87 @@
+//------------------------------------------------
+//--- 010 Editor Binary Template
+//
+//      File: .dm
+//   Authors: Xsear
+//  Category: Firefall
+// File Mask: *.dm
+//  ID Bytes: 
+//------------------------------------------------
+
+#include "_common_types.bt";
+
+struct POSE_DEBUG_DATA_1 {
+    Vec3f position;
+    Vec4f orientation; // quarternion
+    Vec3f direction;
+};
+
+struct POSE_DEBUG_DATA_ARROW {
+    Vec3f origin;
+    Vec3f direction;
+};
+
+struct POSE_DEBUG_DATA_COLLISION {
+    byte arrowCount; // fixme repeat
+    POSE_DEBUG_DATA_ARROW arrows[arrowCount];    
+
+    byte floatCount; // fixme repeat
+    float floats[floatCount];
+};
+
+struct POSE_DEBUG_DATA_2 {
+    byte haveData;
+    if (haveData == 1) {
+        ushort unk1;
+        Vec3f velocity;
+        byte unk3;
+        byte unk4;
+        ushort jetpackEnergy;
+        short groundTimePositiveAirTimeNegative;
+        short timeSinceLastJump;
+        byte haveCollisionData;
+        if (haveCollisionData) {
+            POSE_DEBUG_DATA_COLLISION collisionData;
+        }
+        Vec3f unk9;
+        Vec3f unk10;
+        byte unk11;
+    }
+};
+
+struct TRACE_GROUP {
+    ushort shorttime;
+    POSE_DEBUG_DATA_1 dbg_1;
+    ushort state<comment="Looks like movement state">;
+    POSE_DEBUG_DATA_2 dbg_2;
+};
+
+struct TRACE_DATA {
+    byte haveData;
+    if (haveData == 1) {
+        uint time;
+        uint bitfield<comment="Use the debugmovement cvars to toggle which trace data is recorded.">;
+
+        local uint flag<hidden=true> = 1;
+        local uint counter<hidden=true> = 20;
+        do {
+            if ((bitfield & flag) != 0) {
+                TRACE_GROUP data;
+            }
+            flag = (flag << 1) | (flag < 0);
+            counter--;
+        } while (counter != 0);
+    }
+};
+struct TRACE_ARR_CONT(ubyte count) {
+    TRACE_DATA data[count]<optimize=false>;
+};
+
+struct FILE {
+    do {
+        ubyte count;
+        if (count > 0) {
+            TRACE_ARR_CONT data(count);
+        }
+    } while (count == 0xFF);
+} debugmovement;
