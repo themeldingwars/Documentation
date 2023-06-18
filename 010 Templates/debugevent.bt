@@ -1,0 +1,61 @@
+//------------------------------------------------
+//--- 010 Editor Binary Template
+//
+//      File: .devt
+//   Authors: Xsear
+//  Category: Firefall
+// File Mask: *.devt
+//  ID Bytes: 
+//------------------------------------------------
+
+#include "_common_types.bt";
+
+enum <byte> DEBUG_EVENT_TYPE
+{
+    Frame = 0,
+    Update = 1,
+    WeaponInput_FireBurst = 2, // Green
+    WeaponInput_FireEnd = 3, // Red
+    WeaponInput_Reload = 4, // White
+    WeaponInput_Unk5 = 5, // Cyan, maybe Reload End?
+    WeaponInput_UseScope = 6, // Purple, could be mixed up
+    WeaponInput_SelectFireMode = 7, // Purple, could be mixed up
+    WeaponInput_SelectWeapon = 8, // Black
+    Weapon_Burst = 9, // DarkOrange
+    Weapon_FireWeaponProjectile = 10 // Orange
+};
+
+struct EVENT_DATA {
+    uint time1;
+    uint time2;
+    DEBUG_EVENT_TYPE type;
+
+};
+struct EVENT_DATA_ARR_CONT(ubyte count) {
+    EVENT_DATA data[count]<optimize=false>;
+};
+struct EVENT_DATA_ARR {
+    do {
+        ubyte count;
+        if (count > 0) {
+            EVENT_DATA_ARR_CONT data(count);
+        }
+    } while (count == 0xFF);
+};
+
+struct DATA {
+    uint total;
+    EVENT_DATA_ARR inner;
+};
+
+struct FILE {
+    uint time;
+    uint unk2;
+    uint graphDuration;
+    
+    ushort prefix;
+    byte blob[((prefix >> 6) + 1) << 3]<comment="Probably a bitfield">;
+
+    uint count<comment="Max 4">;
+    DATA data[count]<optimize=false, comment="Grouping the different types (frame, update, weaponinput, weapon).">;
+} debugevent;
