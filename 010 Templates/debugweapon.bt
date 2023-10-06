@@ -45,7 +45,9 @@ struct TookDebugWeaponHit_Optional_2 {
 
 struct TookDebugWeaponHit {
     DEBUG_TRACE_TYPE type;
-    uint unk2_traceId;
+    uint unk_traceId;
+    //ushort unk_traceId_ref : 16;
+    //ushort unk_traceId_rem : 16;
     uint time;
     ushort unk4;
     Vec3f Position;
@@ -63,23 +65,32 @@ struct TookDebugWeaponHit {
     }
 };
 
-struct TRACE_MOVEMENT_DATA {
-    byte unk2[4];
+struct TRACE_MOVEMENT_DATA { // Maybe clientProjMem?
+    byte unk1[4];
+
     Vec3f rayStart;
     Vec3f rayEnd;
-    float weaponRange;
-    uint uint2;
-    Vec4f vec4_1;
-    Vec4f vec4_2;
-    float unk3_1;
-    float unk3_2;
-    Vec3f vec3_3;
-    uint unk4;
-    Vec3f vec3_4;
-    Vec3f vec3_5;
+    float weaponRange; // Matches the item attribute
+    ushort unk2; // 300?
+    
+    byte unk3_1[6];
+    byte unk3_3[28];
+    uint unk3_ptr; // Looks like a memory address o_O
+
+    byte bullet;
+    byte unk_bullet_rest[3]; // maybe this is local_c?
+
+    Vec3f unk4_vec3;
+
+    uint damagePerRound;
+
+    byte unk5[12];
+    Vec3f unk6_vec3;
+
     uint weaponTemplateId;
-    uint unk5;
-    byte unk6[12];
+    byte slotIndex;
+    
+    byte unk7[15];
 };
 
 struct TRACE {
@@ -87,12 +98,15 @@ struct TRACE {
     if (outerByte == 1) {
         byte innerByte;
         uint unk_traceId;
+        //ushort unk_traceId_ref : 16;
+        //ushort unk_traceId_rem : 16;
+
         uint ammoTypeId;
         if (ammoTypeId != 0) {
             TRACE_MOVEMENT_DATA blob; // 0x88
         };
-        
-        local int ivar3<hidden=true> = 2;
+
+        local int ivar3<hidden=true> = 2; // Client, Server
         do {
             byte debugWeaponHitDataCount;
             if (debugWeaponHitDataCount != 0) {
@@ -111,7 +125,7 @@ struct TRACE {
 };
 
 struct FILE_DATA {
-    byte maxSize<comment="debugweapon.maxSize">;
+    ubyte maxSize<comment="debugweapon.maxSize">;
     while (FTell() < ( FileSize() - 4)) {
         TRACE t<optimize=false>;
     }
