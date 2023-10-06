@@ -106,21 +106,15 @@ struct TRACE {
             TRACE_MOVEMENT_DATA blob; // 0x88
         };
 
-        local int ivar3<hidden=true> = 2; // Client, Server
-        do {
-            byte debugWeaponHitDataCount;
-            if (debugWeaponHitDataCount != 0) {
-                local byte debugWeaponHitDataCounter<hidden=true> = debugWeaponHitDataCount;
-                do {
-                    TookDebugWeaponHit tdbwh;
-                    debugWeaponHitDataCounter--;
-                }
-                while (debugWeaponHitDataCounter != 0);
-            }
-             
-            ivar3--;
+        byte clientDataCount;
+        if (clientDataCount != 0) {
+            TookDebugWeaponHit tdbwh_client[clientDataCount]<optimize=false>;
         }
-        while (ivar3 != 0);
+
+        byte serverDataCount;
+        if (serverDataCount != 0) {
+            TookDebugWeaponHit tdbwh_server[serverDataCount]<optimize=false>;
+        }
     };
 };
 
