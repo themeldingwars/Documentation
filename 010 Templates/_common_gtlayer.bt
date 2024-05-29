@@ -16,102 +16,105 @@
 local uint64 NODE_TAG_MAGIC<hidden=true> = 0x12ED5A12ED5B12ED;
 
 typedef enum <uint32> {
-        // Hack
-        NO_PARENT = 0xFFFFFFFF,
+    // Hack
+    NO_PARENT = 0xFFFFFFFF,
 
-        // Zone
-        ZONE                                             = 0x30000,
-        ZONE_SKYBOX                                      = 0x20000,
-        ZONE_DEFAULT_ENVIRONMENT                         = 0x20100,
-            DEFAULT_ENVIRONMENT_10000                    = 0x02710, // 6 floats, forming 2 points. For some (indoor?) zones, they are the same.
-        ZONE_MELDING                                     = 0x20200,
-            MELDING_PERIMITER                            = 5,
-        ZONE_WATER                                       = 0x20300,
-            WATER_CHILD                                  = 4,       // Legacy
-        ZONE_CHUNK_INFO                                  = 0x20400, 
-            CHUNK_INFO_RANGE                             = 0x10000,
-            CHUNK_INFO_REF                               = 0x10101, 
-            CHUNK_INFO_REF2                              = 0x10100,
-        ZONE_MELDING_HEIGHT_MAP_DATA                     = 0x20700,
-        ZONE_PATH                                        = 0x20800,
-        ZONE_WORLD_CHUNK_IMPORT                          = 0x20900,
-        ZONE_135168                                      = 0x21000, // Bounds but for what, hey are bottom left and top right of zone though not all the way to the edge.
-        ZONE_PROP_ENCOUNTER_NAME_REGISTRY                = 0x21200,
-        ZONE_PROP                                        = 0x21400,
-        ZONE_CAMERA_SEQUENCE                             = 0x21500,
-        ZONE_TRANSFER_BOUNDS                             = 0x21600,
-        ZONE_SUBZONE_REGION                              = 0x21700,
+    // Zone
+    ZONE                                             = 0x30000,
+    ZONE_SKYBOX                                      = 0x20000,
+    ZONE_DEFAULT_ENVIRONMENT                         = 0x20100,
+        DEFAULT_ENVIRONMENT_10000                    = 0x02710, // Two vec3s. For some (indoor?) zones, they are the same. Older versions (1710) have only one.
+    ZONE_MELDING                                     = 0x20200,
+        MELDING_PERIMITER                            = 5,
+    ZONE_WATER                                       = 0x20300,
+        WATER_CHILD                                  = 4,       // Legacy
+    ZONE_CHUNK_INFO                                  = 0x20400, 
+        CHUNK_INFO_RANGE                             = 0x10000,
+        CHUNK_INFO_REF2                              = 0x10100,
+        CHUNK_INFO_REF                               = 0x10101,
+    ZONE_MELDING_HEIGHT_MAP_DATA                     = 0x20700,
+    ZONE_PATH                                        = 0x20800,
+    ZONE_WORLD_CHUNK_IMPORT                          = 0x20900,
+    ZONE_135168                                      = 0x21000, // Bounds but for what, hey are bottom left and top right of zone though not all the way to the edge.
+    ZONE_PROP_ENCOUNTER_NAME_REGISTRY                = 0x21200,
+    ZONE_PROP                                        = 0x21400,
+    ZONE_CAMERA_SEQUENCE                             = 0x21500,
+    ZONE_TRANSFER_BOUNDS                             = 0x21600,
+    ZONE_SUBZONE_REGION                              = 0x21700,
 
-        // GTChunk Index
-        CHUNK                                            = 0x40000,
-        CHUNK_LOD                                        = 0x40001,
-        CHUNK_SUBCHUNK                                   = 0x40002,
-        
-        // GTChunk Payload
-        CHUNK_TERRAIN                                    = 0x40100, // parent, children are "terrain chunk layer"
-            TERRAIN_T0                                   = 0, // meta, init?
-            TERRAIN_MATERIALS                            = 1, // parent, children are "terrain chunk material layer"
-                TERRAIN_MATERIAL                         = 5,
-            TERRAIN_QUADTREE                             = 2, // has data and children, children are "terrain chunk quadtree layer"
-                TERRAIN_QUADTREE_BLENDWEIGHT             = 8, // children are "terrain blend weight layer"
-                    TERRAIN_QUADTREE_BLENDWEIGHT_0       = 0,
-                    TERRAIN_QUADTREE_BLENDWEIGHT_2       = 2,
-                TERRAIN_QUADTREE_T9                      = 9,
-                TERRAIN_QUADTREE_T11                     = 11,
-                TERRAIN_QUADTREE_QQ1                     = 0x55555555,
-                TERRAIN_QUADTREE_QQ2                     = 0x575FFFF8,
-                TERRAIN_QUADTREE_QQ3                     = 0xA0A0A0A0,
-                TERRAIN_QUADTREE_QQ4                     = 0xAA2A2A0A,
-                TERRAIN_QUADTREE_QQ5                     = 0xEFFFDFD7,
-                TERRAIN_QUADTREE_QQ6                     = 0xF77F7F97,
-            TERRAIN_T3                                   = 3, // list of terrain materials to load
-            TERRAIN_T4                                   = 4, // shape data?
-        CHUNK_COLLISION1                                 = 0x40101, // main collision data
-        CHUNK_SUBZONEGRID                                = 0x40102,
-        CHUNK_COLLISION3                                 = 0x40103, // blocking volumes?
-        CHUNK_PROP_ENCOUNTER_NAME_REGISTRY2              = 0x40104,
-        CHUNK_COLLISION2                                 = 0x40105, // water volumes?
-        CHUNK_PROP                                       = 0x40200,
-        CHUNK_GEOMETRY2                                  = 0x40203,
-        CHUNK_PROP_ENCOUNTER_NAME_REGISTRY               = 0x40204,
-        CHUNK_VEGETATION                                 = 0x40205,
-        CHUNK_OVERLAY                                    = 0x40206,
-        CHUNK_SECTORS                                    = 0x40207,
-        CHUNK_WATER                                      = 0x40208,
-        CHUNK_VEGETATION2                                = 0x40209,
-        CHUNK_GEOMETRY                                   = 0x40210,
-      
-        PROP_DOODAD                                      = 0x50000,
-        PROP_ENVIRONMENT                                 = 0x50001,
-          ENVIRONMENT_0033                               = 0x00021,
-          ENVIRONMENT_0034                               = 0x00022,
-          ENVIRONMENT_0203                               = 0x000CB, // Mat3x4?
-          ENVIRONMENT_0304                               = 0x00130, // Some kind of mat4x4?
-          ENVIRONMENT_0401                               = 0x00191, // Scale? 22 floats/ints and 1 byte
-          ENVIRONMENT_0501                               = 0x001F5,
-          ENVIRONMENT_0601                               = 0x00259,
-          ENVIRONMENT_0700                               = 0x002BC,
-          ENVIRONMENT_0800                               = 0x00320,
-          ENVIRONMENT_0900                               = 0x00384,
-          ENVIRONMENT_1000                               = 0x003E8, // Rotation?
-          ENVIRONMENT_1100                               = 0x0044C,
-          ENVIRONMENT_1200                               = 0x004B0,
-          ENVIRONMENT_1300                               = 0x00514, // 8 floats + a short?
-          ENVIRONMENT_1400                               = 0x00578, // ??? alpha mask??
-        PROP_PROBEDATA                                   = 0x50006,
-        PROP_DECALINSTANCES1                             = 0x50008,
-        PROP_PARTICLEDATA                                = 0x5000D,
-        PROP_LIGHTDATA                                   = 0x50011,
-        PROP_SECTOR                                      = 0x50013, // Child of CHUNK_SECTORS
-        PROP_AUDIOVOLUME                                 = 0x50014,
-        PROP_MONSTER                                     = 0x50017,
-        PROP_DECALINSTANCES2                             = 0x50018,
-        
-
-
+    // GTChunk Index
+    CHUNK                                            = 0x40000,
+    CHUNK_LOD                                        = 0x40001,
+    CHUNK_SUBCHUNK                                   = 0x40002,
+    
+    // GTChunk Payload
+    CHUNK_TERRAIN                                    = 0x40100, // parent, children are "terrain chunk layer"
+        TERRAIN_T0                                   = 0, // meta, init?
+        TERRAIN_MATERIALS                            = 1, // parent, children are "terrain chunk material layer"
+            TERRAIN_MATERIAL                         = 5,
+        TERRAIN_QUADTREE                             = 2, // has data and children, children are "terrain chunk quadtree layer"
+            TERRAIN_QUADTREE_BLENDWEIGHT             = 8, // children are "terrain blend weight layer"
+                TERRAIN_QUADTREE_BLENDWEIGHT_0       = 0,
+                TERRAIN_QUADTREE_BLENDWEIGHT_2       = 2,
+            TERRAIN_QUADTREE_T9                      = 9,
+            TERRAIN_QUADTREE_T11                     = 11,
+            TERRAIN_QUADTREE_QQ1                     = 0x55555555,
+            TERRAIN_QUADTREE_QQ2                     = 0x575FFFF8,
+            TERRAIN_QUADTREE_QQ3                     = 0xA0A0A0A0,
+            TERRAIN_QUADTREE_QQ4                     = 0xAA2A2A0A,
+            TERRAIN_QUADTREE_QQ5                     = 0xEFFFDFD7,
+            TERRAIN_QUADTREE_QQ6                     = 0xF77F7F97,
+        TERRAIN_T3                                   = 3, // list of terrain materials to load
+        TERRAIN_T4                                   = 4, // shape data?
+    CHUNK_COLLISION1                                 = 0x40101, // main collision data
+    CHUNK_SUBZONEGRID                                = 0x40102,
+    CHUNK_COLLISION3                                 = 0x40103, // blocking volumes?
+    CHUNK_PROP_ENCOUNTER_NAME_REGISTRY2              = 0x40104,
+    CHUNK_COLLISION2                                 = 0x40105, // water volumes?
+    CHUNK_PROP                                       = 0x40200,
+    CHUNK_GEOMETRY2                                  = 0x40203,
+    CHUNK_PROP_ENCOUNTER_NAME_REGISTRY               = 0x40204,
+    CHUNK_VEGETATION                                 = 0x40205,
+    CHUNK_OVERLAY                                    = 0x40206,
+    CHUNK_SECTORS                                    = 0x40207,
+    CHUNK_WATER                                      = 0x40208,
+    CHUNK_VEGETATION2                                = 0x40209,
+    CHUNK_GEOMETRY                                   = 0x40210,
+  
+    PROP_DOODAD                                      = 0x50000,
+    PROP_ENVIRONMENT                                 = 0x50001,
+      ENVIRONMENT_0031                               = 0x0001F,
+      ENVIRONMENT_0032                               = 0x00020,
+      ENVIRONMENT_0033                               = 0x00021,
+      ENVIRONMENT_0034                               = 0x00022,
+      ENVIRONMENT_0202                               = 0x000CA,
+      ENVIRONMENT_0203                               = 0x000CB,
+      ENVIRONMENT_0302                               = 0x0012E,
+      ENVIRONMENT_0303                               = 0x0012F,
+      ENVIRONMENT_0304                               = 0x00130,
+      ENVIRONMENT_0400                               = 0x00190,
+      ENVIRONMENT_0401                               = 0x00191,
+      ENVIRONMENT_0501                               = 0x001F5,
+      ENVIRONMENT_0600                               = 0x00258,
+      ENVIRONMENT_0601                               = 0x00259,
+      ENVIRONMENT_0700                               = 0x002BC,
+      ENVIRONMENT_0800                               = 0x00320,
+      ENVIRONMENT_0900                               = 0x00384,
+      ENVIRONMENT_1000                               = 0x003E8,
+      ENVIRONMENT_1100                               = 0x0044C,
+      ENVIRONMENT_1200                               = 0x004B0,
+      ENVIRONMENT_1300                               = 0x00514,
+      ENVIRONMENT_1400                               = 0x00578,
+    PROP_PROBEDATA                                   = 0x50006,
+    PROP_DECALINSTANCES1                             = 0x50008,
+    PROP_PARTICLEDATA                                = 0x5000D,
+    PROP_LIGHTDATA                                   = 0x50011,
+    PROP_SECTOR                                      = 0x50013, // Child of CHUNK_SECTORS
+    PROP_AUDIOVOLUME                                 = 0x50014,
+    PROP_MONSTER                                     = 0x50017,
+    PROP_DECALINSTANCES2                             = 0x50018,
 } LayerType;
 
-// Remove?
 struct DataUnkBytes(int dataSize) {
     byte data[dataSize]<name="Bytes">;
 };
@@ -131,6 +134,7 @@ struct ChunkLodLayerData {
     uint compressedSize<comment="Size of the data including type and compression headers">; 
     uint uncompressedSize<comment="Size of the decompressed payload">;
 };
+
 string ReadNumSubChunks(uint numSubChunks)
 {
     local uint numSubChunksCount = 1 << 2 * numSubChunks;
@@ -305,7 +309,6 @@ struct MeldingPerimiterSetLayerData {
     }
 };
 
-
 // ZONE_135168
 // Bounds but what for?
 struct Zone_135168_LayerData {
@@ -327,6 +330,7 @@ struct PathStep {
         char action[actionLen];
     }
 };
+
 struct PathLayerData {
     uint cce_id;
     uint unk1;
@@ -390,8 +394,6 @@ struct CameraSequenceLayerData {
         else {
             DataUnkBytes data(56)<name="UnknownDataCameraNode">;
         }
-
-
     };
     if (cameraNodesCount > 0)
         CameraNode cameraNodes[cameraNodesCount] <optimize=false>;
@@ -488,16 +490,8 @@ struct ZoneTransferBoundsLayerData {
     // ...
 };
 
-
-
-
-
-
-
-
-// CHUNK_COLLISION
+// COLLISION
 //============================
-
 struct GeoVertData {
     uint vertCount;
     Vec3f verts[vertCount] <read=Vec3fDisplay>;
@@ -525,7 +519,6 @@ struct indiceBlock {
     else if (indiceType == 196609) {
         indiceType2 indices[count];
     }
-    
 };
 
 struct matsDataBlock {
@@ -546,6 +539,7 @@ struct moppDataBlock {
     ushort shorts[numShorts];
 };
 
+// CHUNK_COLLISION
 struct CollisionGeometryLayerData(uint nodeSize) {
     local uint startPos = FTell();    
 
@@ -575,101 +569,11 @@ struct CollisionGeometryLayerData(uint nodeSize) {
             if (numMoppBlocks > 0)
                 moppDataBlock moppBlocks[numMoppBlocks] <optimize=false>;
         } store <read=GeoStoreDisplay>;
-    
     }
     
-    struct HavokData(uint havokSize) {
-        local uint havocEndPos = FTell()+havokSize;
-        uint64 havocBeginMagicTag;
-
-        // type section
-        local uint havocBeginPos = FTell();
-        local uchar havocEndClassesTag[4];
-        havocEndClassesTag[0] = 0x08;
-        havocEndClassesTag[1] = 0x0a;
-        havocEndClassesTag[2] = 0x40;
-        havocEndClassesTag[3] = 0x0e;
-
-        local uint havocClassesEndTagPos = FindFirst(havocEndClassesTag, true, false, 0, 0.0, 1, havocBeginPos);
-        byte havokClasses[havocClassesEndTagPos-havocBeginPos];
-        uint havokClassesEndTag;
-        // --
-
-        // data section 
-        // try to parse some data based on common patterns
-        local uchar havok04 = 0x04;
-        local uint havokNext04Pos = FindFirst(havok04, true, false, 0, 0.0, 1, FTell()+1);
-        byte havokUnk1[havokNext04Pos-FTell()+1];
-    
-        Vec4f havokVector1<read=Vec4Display>; // hkpListShape aabbHalfExtents?
-        Vec4f havokVector2<read=Vec4Display>; // hkpListShape aabbCenter?
-        
-        local uchar havocUnk2Tag[3];
-        havocUnk2Tag[0] = 0x18;
-        havocUnk2Tag[1] = 0x06;
-        havocUnk2Tag[2] = 0x02;
-        local uint havocUnk2TagPos = FindFirst(havocUnk2Tag, true, false, 0, 0.0, 1, FTell());
-        if ( havocEndPos > havocUnk2TagPos ) {
- 
-            byte havokUnk2[havocUnk2TagPos - FTell()+3]; // the bytes before the last three are interesting, are they 2 bytes per combined shape?
-        
-            Matrix4x4 havokMatrix1<optimize=false>; // ?
-            Vec4f havokVector3<read=Vec4fDisplay>; // often similiar to the previous two vectors
-            Vec4f havokVector4<read=Vec4fDisplay>; // but not always
-    
-            if (store.numVertBlocks > 0) { // Protect against errors when guess mockering
-                local uchar havok08 = 0x08;
-                byte havokUnk_MaybeImportant[ FindFirst(havok08, true, false, 0, 0.0, 1, FTell()) - FTell() ];
-                byte havokUnk_ShouldBe8_1;
-                byte data_group1[ FindFirst(havok08, true, false, 0, 0.0, 1, FTell()+1) - FTell()];
-                byte havokUnk_ShouldBe8_2;
-                byte data_group2[ FindFirst(havok08, true, false, 0, 0.0, 1, FTell()+1) - FTell()];
-                byte havokUnk_ShouldBe8_3;    
-                
-                local uchar havokUnk3SearchSequence1[13];
-                havokUnk3SearchSequence1[0] = 0x06;
-                havokUnk3SearchSequence1[1] = 0x00;
-                havokUnk3SearchSequence1[2] = 0x00;
-                havokUnk3SearchSequence1[3] = 0x00;
-                havokUnk3SearchSequence1[4] = 0x00;
-                havokUnk3SearchSequence1[5] = 0x00;
-                havokUnk3SearchSequence1[6] = 0x00;
-                havokUnk3SearchSequence1[7] = 0x00;
-                havokUnk3SearchSequence1[8] = 0x00;
-                havokUnk3SearchSequence1[9] = 0x00;
-                havokUnk3SearchSequence1[10] = 0x00;
-                havokUnk3SearchSequence1[11] = 0x00;
-                havokUnk3SearchSequence1[12] = 0x00;
-
-                local uint sequence1Spill = 1;
-                local uint havokUnk3EndPos = FindFirst(havokUnk3SearchSequence1, true, false, 0, 0.0, 1, FTell());        
-                
-                if ( havocEndPos > havokUnk3EndPos ) {
-                    byte havokUnk3[havokUnk3EndPos - FTell() + sequence1Spill ];
-        
-                    byte havokUnk4[ 12 * sizeof(data_group1) ]; // always 0x00?
-                    struct transformMatrix {
-                        Vec4f translation<read=Vec4Display>;
-                        Vec4f rotation<read=Vec4Display>; // quaternion 
-                        Vec4f scale<read=Vec4Display>;
-                    };
-                    transformMatrix havokMatrix2[sizeof(data_group1)]<optimize=false>;
-                
-                    ushort unk4MaybeTagOrRef1;
-                    byte unk5;
-                }
-            }
-        }
-    };
-    
-    local uint havokSize = nodeSize - (FTell() - startPos);
-    if (revision == 2) {
-        HavokData havok(havokSize);
-    }
-
     local uint endPos = FTell(); 
-    local uint leftSize = nodeSize - (endPos - startPos);
-    byte havokLeftData[leftSize];
+    local uint remaining = nodeSize - (endPos - startPos);
+    byte embeddedHavokBinaryTagfile[remaining]<comment="Use AssetCc2 to convert this to .xml">;
 };
 
 string GeoStoreDisplay(GeoBlockStorage &store)
@@ -678,6 +582,7 @@ string GeoStoreDisplay(GeoBlockStorage &store)
     SPrintf( s, "Vert: %i, Indice: %i, Mat: %i, Mopp: %i", store.numVertBlocks, store.numIndiceBlocks, store.numMatItems, store.numMoppBlocks);
     return s;
 }
+//============================
 
 // CHUNK_SUBZONEGRID
 struct SubZoneGridData {
@@ -714,7 +619,7 @@ struct GeometryTreeBlock(uint32 type) {
 
     struct GeometryTreeEntry(uint32 type) {
         uint idx; // chunk node index
-        uint count1;
+        uint count1; // cpu nodes?
         if (count1 > 0) {
             struct count1Data(uint32 type) {
                 Vec3f min<read=Vec3fDisplay>;
@@ -786,7 +691,7 @@ struct GeometryTreeBlock(uint32 type) {
             count1Data c1data(type)[count1]<optimize=false>;
         }
 
-        uint count2;
+        uint count2; // gpu nodes?
         if (count2 > 0) {
             struct count2Data(uint32 type) {
                 float endtenfloats[10];
@@ -804,8 +709,9 @@ struct GeometryTreeBlock(uint32 type) {
     GeometryTreeEntry entries(type)[count_entries]<optimize=false>;
 };
 
-// CHUNK_TERRAIN
+// TERRAIN
 //============================
+// CHUNK_TERRAIN
 struct TerrainChunk_type0 {
     uint unk1;
     uint unk2;
@@ -875,6 +781,7 @@ struct TerrainChunk_type4(uint nodeSize) {
         }
     }
 };
+
 string T4NodeDisplay(T4Node &node)
 {
     string s;   
@@ -936,173 +843,279 @@ struct PropNodeEntry_ParticleData {
     byte last[20];
 };
 
-
-
-
 // ENVIRONMENT
 //============================
+struct CommonEnvStruct1 { // FUN_0170b5f0
+    uint haveData;
+    if (haveData == 1) {
+        uint count;
+        // some init condition here
+        float unk3[2*count]; // do while here
+    };
+};
+
+struct CommonEnvStruct2(char param3, byte param4) { // FUN_017009e0
+    struct TypeZero {
+        float unk3;
+        ubyte argb[4]; // Guessing this is color as ARGB looks to fit
+    };
+    
+    struct TypeOther {
+        float unk3;
+        byte unk5[3];
+        float unk6;
+    };
+    
+    uint haveData;
+    if (haveData == 1) { // some additional check here
+        uint count;
+        if (param4 == 0) {
+            TypeZero data[count];
+        } else {
+            TypeOther data[count];
+        }
+    };
+};
+
+struct CommonEnvShared3 {
+    CommonEnvStruct1 unk1;
+    CommonEnvStruct2 unk2('\0',0);
+    CommonEnvStruct1 unk3;
+    CommonEnvStruct1 unk4;
+    CommonEnvStruct1 unk5;
+};
 
 // DEFAULT_ENVIRONMENT_10000
-struct DefaultEnvironment_10000_LayerData {
-    Vec3f a;
-    Vec3f b;
+struct DefaultEnvironment_10000_LayerData(uint64 layerDataEndPos) {
+    Vec3f unk1;
+    if (FTell() < layerDataEndPos) {
+        Vec3f unk2;
+    }
 };
-struct DefaultEnvironment_10000_LayerData_1710 {
-    Vec3f a;
+
+// ENVIRONMENT_0031
+struct Environment_0031_LayerData {
+    CommonEnvStruct2 unk1('\0',0);
+    CommonEnvShared3 unk4;
+};
+
+// ENVIRONMENT_0032
+struct Environment_0032_LayerData {
+    CommonEnvStruct2 unk1('\0',0);
+    CommonEnvStruct1 unk2;
+    CommonEnvStruct1 unk3;
+    CommonEnvShared3 unk4;
 };
 
 // ENVIRONMENT_0033
-struct Environment_0033_LayerData {
-
+struct Environment_0033_LayerData(uint64 layerDataEndPos) {
+    CommonEnvStruct2 unk1('\x01',0);
+    CommonEnvStruct1 unk2;
+    CommonEnvStruct1 unk3;
+    CommonEnvStruct1 unk4;
+    CommonEnvStruct2 unk5('\x01',0);
+    CommonEnvStruct1 unk6;
+    CommonEnvStruct1 unk7;
+    CommonEnvStruct1 unk8;
+    
+    if (FTell() < layerDataEndPos) {
+        CommonEnvStruct1 unk9;
+        CommonEnvStruct1 unk10;
+        CommonEnvStruct1 unk11;
+    }
+    
+    if (FTell() < layerDataEndPos) {
+        CommonEnvStruct1 unk12;
+        CommonEnvStruct1 unk13;
+    }
 };
 
 // ENVIRONMENT_0034
 struct Environment_0034_LayerData {
-    // WIP
-    struct repeat1 {
-        float f1;
-        byte u[3];
-        float f2;
-    };
-    struct core {
-        uint a1;
-        uint a2;
-        repeat1 a3[a2];
-    
-        uint d1;
-        uint d2;
-        uint d3;
-        uint d4;
-    };
-    core test[3]<optimize=false>; // :thinking:
+    CommonEnvStruct2 unk1('\x01',1);
+    CommonEnvStruct1 unk2;
+    CommonEnvStruct2 unk3('\x01',1);
+    CommonEnvStruct1 unk4;
+    CommonEnvStruct2 unk5('\x01',1);
+    CommonEnvStruct1 unk6;
+    CommonEnvStruct1 unk7;
+    CommonEnvStruct1 unk8;
+    CommonEnvStruct1 unk9;
+    CommonEnvStruct2 unk10('\x01',0);
+    CommonEnvStruct1 unk11;
+    CommonEnvStruct1 unk12;
+    CommonEnvStruct1 unk13;
+    CommonEnvStruct1 unk14;
+    CommonEnvStruct1 unk15;
+    CommonEnvStruct1 unk16;
+    CommonEnvStruct1 unk17;
+};
+
+// ENVIRONMENT_0202
+struct Environment_0202_LayerData {
+    CommonEnvStruct2 unk1('\0',0);
+    CommonEnvStruct2 unk2('\0',0);
 };
 
 // ENVIRONMENT_0203
 struct Environment_0203_LayerData {
-    // WIP
-     struct p0203_data {
-        float f;
-        uint u;
-    };
-    struct p0203_main {
-        uint unk1;
-        uint count;
-        p0203_data data[count];
-    };
+    CommonEnvStruct2 unk1('\x01',0);
+    CommonEnvStruct2 unk2('\x01',0);
+    CommonEnvStruct1 unk3;
+};
 
-    p0203_main test[3]<optimize=false>;
+// ENVIRONMENT_0302
+struct Environment_0302_LayerData {
+    CommonEnvStruct1 unk1;
+    CommonEnvStruct2 unk2('\0',0);
+    CommonEnvStruct2 unk2('\0',0);
+};
+
+// ENVIRONMENT_0303
+struct Environment_0303_LayerData {
+    CommonEnvStruct1 unk1;
+    CommonEnvStruct2 unk2('\0',0);
 };
 
 // ENVIRONMENT_0304
-struct Environment_0304_LayerData {
-    // WIP
-    struct p304_1 {
-        uint a;
-        uint b;
-        uint c;
-        float d;
-    };
-    p304_1 test[4];
+struct Environment_0304_LayerData(uint64 layerDataEndPos) {
+    CommonEnvStruct1 unk1;
+    CommonEnvStruct2 unk2('\x01',0);
+    CommonEnvStruct2 unk3('\x01',0);
+    
+    if (FTell() < layerDataEndPos) {
+        CommonEnvStruct1 unk4;
+    }
+};
+
+// ENVIRONMENT_0400
+struct Environment_0400_LayerData {
+      Vec3f unk1;
+      float unk2;
+      float unk3;
+      float unk4;
 };
 
 // ENVIRONMENT_0401
-struct Environment_0401_LayerData {
-    // WIP
-    // Length 89
+struct Environment_0401_LayerData(uint64 layerDataEndPos) {
+    Matrix4x4 transform;
+    float unk1;
+    float unk2;
+    uint unk3;
     
-    Matrix4x4 transform; // This looks reasonable
-
-    // Rest is just guessing
-    Vec3f a; // 1.0, 0.5, 0.0?
-    Vec3f b;
-    byte last;
+    // Weird call parsing up to 3 values maybe
+    uint unk4_1;
+    uint unk4_2;
+    uint unk4_3;
+    
+    if (FTell() == layerDataEndPos-1) {
+        byte unk5;
+    } else {
+        if (FTell() < layerDataEndPos) {
+            uint unk6;
+        }
+        if (FTell() < layerDataEndPos) {
+            uint unk7;
+        }
+    }
 };
 
 // ENVIRONMENT_0501
 struct Environment_0501_LayerData {
-
+    CommonEnvStruct1 unk1;
+    CommonEnvStruct1 unk2;
 };
 
-// ENVIRONMENT_0601
-struct Environment_0601_LayerData {
-    // WIP
-     struct p0601_data {
-        float f;
-        uint u;
-    };
-    struct p0601_main {
-        uint unk1;
-        uint count;
-        p0601_data data[count];
-    };
+// ENVIRONMENT_0600
+struct Environment_0600_LayerData {
+    CommonEnvStruct2 unk1('\0',0);
+    CommonEnvStruct2 unk2('\0',0);
+    CommonEnvStruct2 unk3('\0',0);
+    CommonEnvStruct2 unk4('\0',0);
+    CommonEnvStruct2 unk5('\0',0);
+};
 
-    p0601_main test[5]<optimize=false>;
+// ENVIRONMENT_0601 (Good fit for Clouds, 5 colors!)
+struct Environment_0601_LayerData {
+    CommonEnvStruct2 unk1('\x01',0);
+    CommonEnvStruct2 unk2('\x01',0);
+    CommonEnvStruct2 unk3('\x01',0);
+    CommonEnvStruct2 unk4('\x01',0);
+    CommonEnvStruct2 unk5('\x01',0);
 };
 
 // ENVIRONMENT_0700
 struct Environment_0700_LayerData {
-
+    CommonEnvStruct1 unk1;
+    CommonEnvStruct1 unk2;
 };
 
 // ENVIRONMENT_0800
 struct Environment_0800_LayerData {
-
+    CommonEnvStruct1 unk1;
+    CommonEnvStruct1 unk2;
 };
 
 // ENVIRONMENT_0900
 struct Environment_0900_LayerData {
-
+    CommonEnvStruct1 unk1;
+    CommonEnvStruct1 unk2;
 };
 
 // ENVIRONMENT_1000
 struct Environment_1000_LayerData {
-    struct p1000_1 {
-        uint a;
-        uint b;
-        uint c;
-        float d;
-    };
-    p1000_1 test[2];
+    CommonEnvStruct1 unk1;
+    CommonEnvStruct2 unk2('\x01',0);
 };
 
 // ENVIRONMENT_1100
-struct Environment_1100_LayerData {
-
-};
+struct Environment_1100_LayerData {};
 
 // ENVIRONMENT_1200
 struct Environment_1200_LayerData {
-    struct p1200_1 {
-        uint a;
-        uint b;
-        uint c;
-        float d;
-    };
-    p1200_1 test[5]<optimize=false>;
+    CommonEnvStruct1 unk1;
+    CommonEnvStruct1 unk2;
+    CommonEnvStruct1 unk3;
+    CommonEnvStruct1 unk4;
+    CommonEnvStruct1 unk5;
 };
 
 // ENVIRONMENT_1300
-struct Environment_1300_LayerData {
-    float data[7];
-    byte b;
+// 7(8) floats + 2 bools = good fit for Effect Weights
+struct Environment_1300_LayerData(uint64 layerDataEndPos) {
+    float unk1;
+    float unk2;
+    float unk3;
+    float unk4;
+    float unk5;
+    float unk6;
+
+    if (FTell() < layerDataEndPos) {
+        float unk7;
+    }
+    if (FTell() < layerDataEndPos) {
+        byte unk8;
+    }
+    if (FTell() < layerDataEndPos) {
+        byte unk9;
+    }
+    if (FTell() < layerDataEndPos) {
+        float unk10;
+    }
 };
-/*
-struct DataU007LayerData {
-    float data[7];
-    uint16 data2;
-    float data3;
-};
-*/
 
 // ENVIRONMENT_1400
-struct Environment_1400_LayerData {
-    byte unk[4];
+struct Environment_1400_LayerData(uint64 layerDataEndPos) {
+    uint unk1;
+    
+    if (FTell() < layerDataEndPos) {
+        uint unk2;
+    }
 };
+//============================
 
-
-
-// ----
-
+//============================
+//============================
 
 // Main layer structure
 struct Layer;
@@ -1132,7 +1145,6 @@ typedef struct (LayerType parentTypeId) {
     
     // If there is layer data to parse
     if (layerDataEndPos > layerContentStartPos) {
-        
         // Handle per type data 
        
         // Terrain children separated to avoid ID conflicts
@@ -1222,12 +1234,7 @@ typedef struct (LayerType parentTypeId) {
                     break;
         
                 case DEFAULT_ENVIRONMENT_10000:
-                    if (length > 12) {
-                        DefaultEnvironment_10000_LayerData data;
-                    }
-                    else {
-                        DefaultEnvironment_10000_LayerData_1710 data;
-                    }
+                    DefaultEnvironment_10000_LayerData data(layerDataEndPos);
                     break;
         
                 case CHUNK_COLLISION1:
@@ -1279,24 +1286,44 @@ typedef struct (LayerType parentTypeId) {
                     PropNodeEntry_ParticleData data;
                     break;
                 
+                case ENVIRONMENT_0031:
+                    Environment_0031_LayerData data;
+                    break;
+                    
+                case ENVIRONMENT_0032:
+                    Environment_0032_LayerData data;
+                    break;
+                
                 case ENVIRONMENT_0033:
-                    Environment_0033_LayerData data;
+                    Environment_0033_LayerData data(layerDataEndPos);
                     break;
 
                 case ENVIRONMENT_0034:
                     Environment_0034_LayerData data;
                     break;
 
+                case ENVIRONMENT_0202:
+                    Environment_0202_LayerData data;
+                    break;
+
                 case ENVIRONMENT_0203:
                     Environment_0203_LayerData data;
                     break;
+                    
+                case ENVIRONMENT_0302:
+                    Environment_0302_LayerData data;
+                    break;
+                    
+                case ENVIRONMENT_0303:
+                    Environment_0303_LayerData data;
+                    break;
 
                 case ENVIRONMENT_0304:
-                    Environment_0304_LayerData data;
+                    Environment_0304_LayerData data(layerDataEndPos);
                     break;
 
                 case ENVIRONMENT_0401:
-                    Environment_0401_LayerData data;
+                    Environment_0401_LayerData data(layerDataEndPos);
                     break;
 
                 case ENVIRONMENT_0501:
@@ -1332,20 +1359,17 @@ typedef struct (LayerType parentTypeId) {
                     break;
 
                 case ENVIRONMENT_1300:
-                    Environment_1300_LayerData data;
+                    Environment_1300_LayerData data(layerDataEndPos);
                     break;
 
                 case ENVIRONMENT_1400:
-                    Environment_1400_LayerData data;
+                    Environment_1400_LayerData data(layerDataEndPos);
                     break;
 
                 default:
                     break;
             }
         }
-
-
-        
     }
 
     // Ensure that we have parsed all the data of the layer before parsing children
