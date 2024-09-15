@@ -45,14 +45,12 @@ struct TookDebugWeaponHit_Optional_2 {
 
 struct TookDebugWeaponHit {
     DEBUG_TRACE_TYPE type;
-    uint unk_traceId;
-    //ushort unk_traceId_ref : 16;
-    //ushort unk_traceId_rem : 16;
+    uint traceId<comment="Generated with PRNG and uniquely identifies a bullet, is used by some rendering logic to associate data.">;
     uint time;
     ushort unk4;
     Vec3f Position;
     Vec3f Direction;
-    uint unk7_id;
+    uint unk_physicsMaterial<comment="For Impact, Ragdoll_Hit and Validated, it seems to match dbphysicsmaterials::PhysicsMaterial Id. For Spawn, its max_int, and for Posefile_Hit its 0.">;
 
     byte have_unk8;
     if (have_unk8) {
@@ -61,7 +59,7 @@ struct TookDebugWeaponHit {
 
     byte have_unk9;
     if (have_unk9) {
-        TookDebugWeaponHit_Optional_2 unk9;
+        TookDebugWeaponHit_Optional_2 unk9<comment="Is used with Ragdoll_Hit and seems to represent transforms for the pieces that make up the representation. When importing data, this is only rendered if the matching entity exists.">;
     }
 };
 
@@ -97,7 +95,7 @@ struct TRACE {
     byte outerByte;
     if (outerByte == 1) {
         byte innerByte;
-        uint unk_traceId;
+        uint traceId<comment="Generated with PRNG and uniquely identifies a bullet, is used by some rendering logic to associate data.">;
         //ushort unk_traceId_ref : 16;
         //ushort unk_traceId_rem : 16;
 

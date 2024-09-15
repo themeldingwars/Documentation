@@ -1,8 +1,11 @@
 //------------------------------------------------
-//--- 010 Editor v11.0.1 Binary Template
+//--- 010 Editor Binary Template
 //
 //      File: lowmiptextures.pak
 //   Authors: freakbyte, Xsear
+//  Category: Firefall
+// File Mask: lowmiptextures.pak
+//  ID Bytes: 4C 4D 54 44 // LMTD
 //------------------------------------------------
 
 typedef struct 

@@ -1,8 +1,11 @@
 //------------------------------------------------
-//--- 010 Editor v11.0 Binary Template
+//--- 010 Editor Binary Template
 //
 //      File: vtex_idx.tileInfo
-//   Authors: Xsear, freakbyte
+//   Authors: freakbyte, Xsear
+//  Category: Firefall
+// File Mask: *.vtex_idx.tileInfo.dat
+//  ID Bytes: 
 //------------------------------------------------
 
 struct ROW {

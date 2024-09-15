@@ -1,10 +1,12 @@
-//--------------------------------------
-// 010 Editor Template
-// File: vtex_idx, virtual texture index
-// Author: freakbyte, Xsear
-// Note: not complete
-//--------------------------------------
-
+//------------------------------------------------
+//--- 010 Editor Binary Template
+//
+//      File: vtex_idx
+//   Authors: freakbyte, Xsear
+//  Category: Firefall
+// File Mask: *.vtex_idx
+//  ID Bytes: 
+//------------------------------------------------
 
 /*  
 Each imageinfo entry contains three hashes, each pointing to a different texture file.
