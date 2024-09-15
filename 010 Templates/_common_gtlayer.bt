@@ -309,6 +309,34 @@ struct MeldingPerimiterSetLayerData {
     }
 };
 
+// ZONE_MELDING_HEIGHT_MAP_DATA
+struct ZoneMeldingHeightMapData(uint64 layerDataEndPos) {
+    int32 size_x_1;
+    int32 size_x_2;
+    int32 size_y_1;
+    int32 size_y_2;
+    float unk5;
+    float unk6;
+    float unk7;
+    
+    // map, offset, scale?
+    
+    // Failure check here
+    
+    local uint32 mSizeX = ((size_x_2 - size_x_1) + 1); // >= 2
+    local uint32 mSizeY = ((size_y_2 - size_y_1) + 1); // >= 2
+
+    local uint32 size = mSizeY * mSizeX;
+    local uint32 doubled = size * 2;
+    local uint32 quadrupled = size * 4;
+    local uint64 remaining = layerDataEndPos - FTell();
+    if (remaining == doubled) {
+        byte data[doubled];
+    } else {
+        byte data[quadrupled];
+    }
+};
+
 // ZONE_135168
 // Bounds but what for?
 struct Zone_135168_LayerData {
@@ -1195,6 +1223,10 @@ typedef struct (LayerType parentTypeId) {
         
                 case ZONE_SKYBOX:
                     SkyBoxRecordLayerData data;
+                    break;
+                
+                case ZONE_MELDING_HEIGHT_MAP_DATA:
+                    ZoneMeldingHeightMapData data(layerDataEndPos);
                     break;
                 
                 case MELDING_PERIMITER:
