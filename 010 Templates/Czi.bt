@@ -1,0 +1,44 @@
+//------------------------------------------------
+//--- 010 Editor v11.0.1 Binary Template
+//
+//      File: Arkii, Xennma
+//   Authors: 
+//   Version: 
+//   Purpose: Color Zone Index Maps used to define areas to be recoloured in game
+//  Category: 
+// File Mask: *.czi
+//  ID Bytes: 
+//   History: 
+//------------------------------------------------
+
+struct HEADER
+{
+    char MAGIC[4];
+    int Version;
+    int Widht;
+    int Height;
+    byte PatternFlags;
+    byte Unk;
+    int NumMipLevels;
+};
+
+struct MipInfo
+{
+    int Offset; // The combined size of all the previous mip infos added
+    int Size;
+};
+
+struct CompressedBlock
+{
+    int Length;
+    byte Data[Length];
+};
+
+struct FILE
+{
+    HEADER header;
+
+    MipInfo MipInfos[header.NumMipLevels];
+    CompressedBlock CompressedBlocks[header.NumMipLevels] <optimize=false>;
+
+} file;
