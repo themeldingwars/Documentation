@@ -69,6 +69,12 @@ typedef struct {
 } Matrix3x4;
 
 typedef struct {
+    Vec4f a<read=Vec4fDisplay, optimize=false>;
+    Vec4f b<read=Vec4fDisplay, optimize=false>;
+    Vec4f c<read=Vec4fDisplay, optimize=false>;
+} Matrix4x3;
+
+typedef struct {
     uint32 len;
     char str[len];
 } LengthDefinedString;

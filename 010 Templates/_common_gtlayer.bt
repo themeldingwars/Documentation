@@ -66,11 +66,11 @@ typedef enum <uint32> {
             TERRAIN_QUADTREE_QQ6                     = 0xF77F7F97,
         TERRAIN_T3                                   = 3, // list of terrain materials to load
         TERRAIN_T4                                   = 4, // shape data?
-    CHUNK_COLLISION1                                 = 0x40101, // main collision data
+    CHUNK_COLLISION1                                 = 0x40101, // staticGeometryCollision
     CHUNK_SUBZONEGRID                                = 0x40102,
-    CHUNK_COLLISION3                                 = 0x40103, // blocking volumes?
+    CHUNK_COLLISION3                                 = 0x40103, // movementBlockerCollision
     CHUNK_PROP_ENCOUNTER_NAME_REGISTRY2              = 0x40104,
-    CHUNK_COLLISION2                                 = 0x40105, // water volumes?
+    CHUNK_COLLISION2                                 = 0x40105, // waterCollision
     CHUNK_PROP                                       = 0x40200,
     CHUNK_GEOMETRY2                                  = 0x40203,
     CHUNK_PROP_ENCOUNTER_NAME_REGISTRY               = 0x40204,
@@ -636,106 +636,197 @@ struct VegationChunk2Data {
     Vec3f b[unk1];
 };
 
+
+// GeometryTree
+//============================
+
+// A wrapper for a commonly reused pattern
+struct GTLz77Buffer() {
+    uint num;
+    uint size;
+    if (size > 0) {
+        byte buffer[size]<comment="LZ77 compressed">; 
+    } 
+};
+
+// Data inside a GTLeaf that differs between versions
+struct GTLeafInfo(uint32 layerType, uint32 layerVersion) {
+    uint materialId : 24; // 3 lowest bytes, .tmlt
+    uint haveTextureIds: 8; // 4th byte affects parsing
+    if (0 < haveTextureIds) {
+        uint textureIds[3]<comment="optional .r5tex">;
+    }
+
+    if (layerType == CHUNK_GEOMETRY2) {
+        Vec4f center<read=Vec4fDisplay>;
+    }
+
+    Vec3f min<read=Vec3fDisplay>;
+    Vec3f max<read=Vec3fDisplay>;
+    uint unk1_1 : 16; // ?
+    uint infoVersion : 16<comment="Known versions are 5, 6, 7 and 8">;
+    uint unk2; // ?
+
+    if (infoVersion == 5) {
+        uint otherMatrixCount; // Maybe xformIndex equivalent for v5?
+        Matrix4x3 otherMatrix[otherMatrixCount]<optimize=false>;
+    }
+
+    uint transformCount;
+    Matrix4x4 transform[transformCount]<optimize=false>;
+    
+    if (infoVersion == 5) {
+        // Before version 6, vgeo wasnt a thing, so presumably some of that data is here
+        GTLz77Buffer unknown1;
+        GTLz77Buffer unknown2;
+        GTLz77Buffer unknown3;
+        GTLz77Buffer unknown4;
+        GTLz77Buffer unknown5;
+        GTLz77Buffer unknown6;
+        GTLz77Buffer unknown7;
+        GTLz77Buffer unknown8;
+        GTLz77Buffer unknown9;
+        GTLz77Buffer unknown10;
+        GTLz77Buffer unknown11;
+        GTLz77Buffer unknown12;
+        GTLz77Buffer unknown13;
+        GTLz77Buffer unknown14;
+    } else {
+        GTLz77Buffer uniqueIndex;
+        GTLz77Buffer xformIndex;
+    }
+    
+    
+    if (infoVersion == 8) {
+        GTLz77Buffer xformNIndex; // Assumption, some random chunks that have this?
+    }
+    
+    uint num; // 3*tris
+    short repeatOffset;
+    GTLz77Buffer repeatIndex;
+    GTLz77Buffer vertIndex;
+    GTLz77Buffer repTbl;
+
+    uint unk3; // Maybe a gtnode reference
+};
+
+// "Leaf" of a GTSubChunk that differs between versions
+struct GTLeaf(uint32 layerType, uint32 layerVersion) {
+    Vec3f min<read=Vec3fDisplay>;
+    Vec3f max<read=Vec3fDisplay>;
+    if (layerVersion == 3 && layerType == CHUNK_GEOMETRY) { // We only have V3 layers of CHUNK_GEOMETRY
+        uint64 unkLong<format=hex>; // Has a default value otherwisen 
+    }
+    uint infoCount;
+    if (infoCount > 0) {
+        GTLeafInfo info(layerType, layerVersion)[infoCount]<optimize=false>;
+    }
+};
+
+// "Node" of a GTSubChunk that differs between versions
+struct GTNode(uint32 layerType, uint32 layerVersion) {
+    if (layerVersion == 3) {
+        float endtenfloats[10];
+        if (layerType == CHUNK_GEOMETRY) {
+            uint64 unkLong<format=hex>;
+        }
+        int unk1;
+        int unk2;
+    } else {
+        Matrix4x3 matrix;   
+    }
+};
+
+// Has the same structure on all versions (with the leaf and nodes differing)
+struct GTSubChunk(uint32 layerType, uint32 layerVersion) {
+    uint scidx<comment="SubChunk Index, 0-63">;
+    uint leafCnt;
+    if (leafCnt > 0) {
+        GTLeaf leaf(layerType, layerVersion)[leafCnt]<optimize=false>;
+    };
+    uint nodeCnt;
+    if (nodeCnt > 0) {
+        GTNode node(layerType, layerVersion)[nodeCnt]<optimize=false>;
+    }
+};
+
+// A set of data that appears before the subchunks, on layerVersion 1 and 2 only
+struct GTPreData(uint32 layerVersion) {
+    uint matrixCount;
+    if (matrixCount > 0) {
+        Matrix4x3 matrixes[matrixCount];
+    }
+    
+    uint local_90;
+    if (local_90 < 0x100000) {
+        if (layerVersion == 2) {
+            if (local_90 > 0) {
+                byte local_90_data[local_90 * 0x1d];
+            }
+        } else if (layerVersion == 1) {
+            uint data1_size;
+            byte data1_buffer[4*data1_size];
+            
+            uint data2_size;
+            byte data2_buffer[4*data2_size];
+            
+            uint data3_size;
+            byte data3_buffer[4*data3_size];
+            
+            uint data4_size;
+            byte data4_buffer[2*data4_size];
+            
+            uint data5_size;
+            byte data5_buffer[2*data5_size];
+          
+            uint data6_size;
+            byte data6_buffer[1*data6_size];
+            
+            uint data7_size;
+            byte data7_buffer[1*data7_size];
+            
+            uint data8_size;
+            byte data8_buffer[1*data8_size];
+            
+            uint data9_size;
+            byte data9_buffer[1*data9_size];
+            
+            uint data10_size;
+            byte data10_buffer[1*data10_size];
+            
+            uint data11_size;
+            byte data11_buffer[1*data11_size];
+            
+            uint data12_size;
+            byte data12_buffer[1*data12_size];
+            
+            uint data13_size;
+            byte data13_buffer[1*data13_size];
+            
+            uint data14_size;
+            byte data14_buffer[1*data14_size];
+            
+            uint data15_size;
+            byte data15_buffer[4*data15_size];
+        }
+    }
+};
+
 // CHUNK_GEOMETRY
 // CHUNK_GEOMETRY2
-struct GeometryTreeBlock(uint32 type) {
-    ushort count_entries; // Tied to chunk sections, eg high lod sub chunks have fewer entries per instance
-    
-    ushort const1; // "3"
+struct GeometryTreeLayerData(uint32 layerType) {
+    uint chunkCount : 16; // At higher LOD, fewer entries per layer
+    uint layerVersion : 16; // "3" since 1586, "2" in 1432-1545, "1" in 1384, "0" in 1297 and earlier
     uint const2;   // "8"
     uint const3;   // "64"
-
-    struct GeometryTreeEntry(uint32 type) {
-        uint idx; // chunk node index
-        uint count1; // cpu nodes?
-        if (count1 > 0) {
-            struct count1Data(uint32 type) {
-                Vec3f min<read=Vec3fDisplay>;
-                Vec3f max<read=Vec3fDisplay>;
-                
-                if (type == CHUNK_GEOMETRY) {
-                    uint64 unkLong<format=hex>; // ?
-                }
-
-                uint count_inner;
-                if (count_inner > 0) {
-                    struct innerData(uint32 type) {
-                        uint materialId : 24; // 3 lowest bytes, .tmlt
-                        uint errorIfZero: 8; // 4th byte must not be zero
-
-                        uint textureId1; // optional .r5tex
-                        uint textureId2; // optional .r5tex
-                        uint textureId3; // optional .r5tex
-                        
-                        if (type == CHUNK_GEOMETRY2) {
-                            Vec3f center<read=Vec3fDisplay>; // ?
-                            float extrafloat; // ?
-                        }
-        
-                        Vec3f min<read=Vec3fDisplay>;
-                        Vec3f max<read=Vec3fDisplay>;
-                        
-                        ushort unk1_1;
-                        ushort unk1_2; // node/leaf count of some form
-                        uint unk2; // ? might ref count 2 data
-       
-                        uint transformCount;
-                        Matrix4x4 transform[transformCount]<optimize=false>;
-                        
-                        uint lz77_data1_num;
-                        uint lz77_data1_compressedSize;
-                        byte lz77_data1_uniqueIdx[lz77_data1_compressedSize]<comment="compressed">; // vgeo page/vert ref
-                        
-                        uint lz77_data2_num;
-                        uint lz77_data2_compressedSize;
-                        byte lz77_data2_xformIdx[lz77_data2_compressedSize]<comment="compressed">; // specifies which transform to use for a vertice
-            
-                        if (unk1_2 == 8) {
-                            uint lz77_data6_num;
-                            uint lz77_data6_compressedSize;
-                            byte lz77_data6[lz77_data6_compressedSize]<comment="compressed">; // maybe xformN
-                        }
-                        
-                        uint num; // 3*tris
-                        short lz77_data3_offset;
-                        uint lz77_data3_num;
-                        uint lz77_data3_compressedSize;
-                        if (lz77_data3_num > 0)
-                            byte lz77_data3_repeatIdx[lz77_data3_compressedSize]<comment="compressed">;
-        
-                        uint lz77_data4_num;
-                        uint lz77_data4_compressedSize;
-                        byte lz77_data4_vertIndex[lz77_data4_compressedSize]<comment="compressed">;
-                        
-                        uint lz77_data5_repTblNum; // num/3
-                        uint lz77_data5_compressedSize;
-                        byte lz77_data5_triangles[lz77_data5_compressedSize]<comment="compressed">; // specifies how to form triangles from vertices
-        
-                        uint unk10; // ? might ref count 2 data
-                    };
-                    innerData inner_data(type)[count_inner]<optimize=false>;
-                }
-            };
-            count1Data c1data(type)[count1]<optimize=false>;
-        }
-
-        uint count2; // gpu nodes?
-        if (count2 > 0) {
-            struct count2Data(uint32 type) {
-                float endtenfloats[10];
-
-                if (type == CHUNK_GEOMETRY) {
-                    uint64 unkLong<format=hex>; // ?
-                }
-                int unk1;
-                int unk2;
-            };
-            count2Data c2data(type)[count2]<optimize=false>;
-        }
-
+    
+    if (layerVersion == 1 || layerVersion == 2) {
+        GTPreData predata(layerVersion);
     };
-    GeometryTreeEntry entries(type)[count_entries]<optimize=false>;
+    
+    GTSubChunk subchunks(layerType, layerVersion)[chunkCount]<optimize=false>;
 };
+//============================
 
 // TERRAIN
 //============================
@@ -1194,6 +1285,11 @@ typedef struct (LayerType parentTypeId) {
                     break;
             }
         }
+        // Terrain Materials
+        else if (parentTypeId == TERRAIN_MATERIALS)
+        {
+            // TODO:
+        }
         // Handle remaining independent of parent
         else {
             switch (typeId) {
@@ -1283,11 +1379,11 @@ typedef struct (LayerType parentTypeId) {
                     break;
                 
                 case CHUNK_GEOMETRY:
-                    GeometryTreeBlock data(typeId);
+                    GeometryTreeLayerData data(typeId);
                     break;
 
                 case CHUNK_GEOMETRY2:
-                    GeometryTreeBlock data(typeId);
+                    GeometryTreeLayerData data(typeId);
                     break;
 
                 case CHUNK_SUBZONEGRID:
